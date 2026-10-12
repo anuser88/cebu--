@@ -18,8 +18,9 @@
     document.head.appendChild(styleTag);
     const SiBu = document.createElement('iframe');
     document.body.appendChild(SiBu);
-    iframe.srcdoc = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
+    SiBu.srcdoc = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
   } catch (e) {
     //location.reload();
+    alert(e);
   }
 }();
