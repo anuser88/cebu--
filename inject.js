@@ -1,5 +1,6 @@
 !async function() {
   try {
+    let sibu = 0;
     document.head.replaceChildren();
     document.body.replaceChildren();
     const styleTag = document.createElement('style');
@@ -19,6 +20,39 @@
     const SiBu = document.createElement('iframe');
     document.body.appendChild(SiBu);
     SiBu.srcdoc = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
+    function redoChl() {
+      sibu = 1;
+      SiBu.style.display = "none";
+      const shit = document.createElement('iframe');
+      document.body.appendChild(shit);
+      shit.src = "https://turboshare.org.uk/api/chat?limit=1";
+      function end() {
+        SiBu.style.display = "block";
+        shit.remove();
+        setTimeout(()=>sibu=0,9000);
+      }
+      shit.addEventListener('load', function() {
+        if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
+        const injectedScript = shit.contentWindow.document.createElement('script');
+        injectedScript.textContent = `const originalSubmit = HTMLFormElement.prototype.submit;
+HTMLFormElement.prototype.submit = function() {
+    window.parent.postMessage({
+        type: 'sibu'
+    }, '*');
+};
+HTMLFormElement.prototype.submit.toString = function() {
+    return "function submit() { [native code] }";
+};
+        `;
+        shit.contentWindow.document.head.appendChild(injectedScript);
+        window.addEventListener('message', function(event) {
+          if (event.data && event.data.type === 'sibu') end();
+        });
+      });
+    }
+    setInterval(async function() {
+      if (await fetch("https://turboshare.org.uk/api/chat?limit=1").then(x=>x.status) === 403 && !sibu) redoChl();
+    },8000);
   } catch (e) {
     //location.reload();
     alert(e);
