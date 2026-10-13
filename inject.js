@@ -57,14 +57,26 @@
       shit.addEventListener('load', function() {
         if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
         const injectedScript = shit.contentWindow.document.createElement('script');
-        injectedScript.textContent = `const originalSubmit = HTMLFormElement.prototype.submit;
-HTMLFormElement.prototype.submit = function() {
+        injectedScript.textContent = `
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeName === 'FORM') {
+                    handleNewForm(node);
+                } 
+                else if (node.querySelectorAll) {
+                    const nestedForms = node.querySelectorAll('form');
+                    nestedForms.forEach(form => handleNewForm(form));
+                }
+            });
+        }
+    }
+});
+function handleNewForm(ngu) {
     window.parent.postMessage({
         type: 'sibu'
     }, '*');
-};
-HTMLFormElement.prototype.submit.toString = function() {
-    return "function submit() { [native code] }";
 };
         `;
         shit.contentWindow.document.head.appendChild(injectedScript);
