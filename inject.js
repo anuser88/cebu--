@@ -40,7 +40,8 @@
           }
           return res;
         };
-        setInterval(()=>fetch("https://turboshare.org.uk/api/chat?limit=1"), 7000);`;
+        const a=()=>fetch("https://turboshare.org.uk/api/chat?limit=1");a();
+        setInterval(a, 7000);`;
       SiBu.contentWindow.document.head.appendChild(proScript);
     });
     function redoChl() {
@@ -56,30 +57,11 @@
       }
       shit.addEventListener('load', function() {
         if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
-        const injectedScript = shit.contentWindow.document.createElement('script');
-        injectedScript.textContent = `
-const observer = new MutationObserver((mutationsList) => {
-    for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach((node) => {
-                if (node.nodeName === 'FORM') {
-                    handleNewForm(node);
-                } 
-                else if (node.querySelectorAll) {
-                    const nestedForms = node.querySelectorAll('form');
-                    nestedForms.forEach(form => handleNewForm(form));
-                }
-            });
-        }
-    }
-});
-function handleNewForm(ngu) {
-    window.parent.postMessage({
-        type: 'sibu'
-    }, '*');
-};
-        `;
-        shit.contentWindow.document.head.appendChild(injectedScript);
+        shit.contentWindow.addEventListener('beforeunload', (event) => {
+            event.preventDefault();
+            end();
+            event.returnValue = ''; 
+        });
         window.addEventListener('message', function(event) {
           if (event.data && event.data.type === 'sibu') end();
         });
