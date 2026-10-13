@@ -50,8 +50,14 @@ HTMLFormElement.prototype.submit.toString = function() {
         });
       });
     }
+    const cebu = SiBu.contentWindow.fetch;
+    shit.contentWindow.fetch = async function(url, opts = {}) {
+      const res = await cebu(url, opts);
+      if (res.status === 403 && !sibu) redoChl();
+      return res;
+    };
     setInterval(async function() {
-      if (await fetch("https://turboshare.org.uk/api/chat?limit=1").then(x=>x.status) === 403 && !sibu) redoChl();
+      await shit.contentWindow.fetch("https://turboshare.org.uk/api/chat?limit=1");
     },8000);
   } catch (e) {
     //location.reload();
