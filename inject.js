@@ -56,6 +56,7 @@
         setTimeout(()=>sibu=0,6000);
       }
       shit.addEventListener('load', function() {
+        alert("Your access has expired, verify again to continue!");
         if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
         shit.contentWindow.addEventListener('beforeunload', (event) => {
             event.preventDefault();
