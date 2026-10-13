@@ -28,6 +28,21 @@
     const SiBu = document.createElement('iframe');
     document.body.appendChild(SiBu);
     SiBu.srcdoc = inj;
+    SiBu.addEventListener('load', function() {
+    const proScript = SiBu.contentWindow.document.createElement('script');
+      proScript.textContent = `const cebu = window.fetch;
+        window.fetch = async function(url, opts = {}) {
+          const res = await cebu(url, opts);
+          if (res.status === 403) {
+            window.parent.postMessage({
+              type: 'cibu'
+            }, '*');
+          }
+          return res;
+        };
+        setInterval(()=>fetch("https://turboshare.org.uk/api/chat?limit=1"), 7000);`;
+      SiBu.contentWindow.document.head.appendChild(proScript);
+    });
     function redoChl() {
       sibu = 1;
       SiBu.style.display = "none";
@@ -58,7 +73,6 @@ HTMLFormElement.prototype.submit.toString = function() {
         });
       });
     }
-    const cebu = SiBu.contentWindow.fetch;
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
     });
