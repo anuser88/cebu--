@@ -5,6 +5,7 @@
       SiBu
     </title>
     <script>
+      var cebu = window.fetch;
       window.fetch = async function(url, opts = {}) {
         const res = await cebu(url, opts);
         if (res.status === 403) {
