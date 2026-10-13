@@ -39,7 +39,7 @@
       proScript.textContent = `const cebu = window.fetch;
         window.fetch = async function(url, opts = {}) {
           const res = await cebu(url, opts);
-          if (res.status === 403) {
+          if (res.headers.get('cf-mitigated')) {
             window.parent.postMessage({
               type: 'cibu'
             }, '*');
