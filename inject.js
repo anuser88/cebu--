@@ -1,6 +1,7 @@
 !async function() {
+  let inj;
   try {
-    await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html");
+    inj = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
   }
   catch (e) {
     alert(`Complete the Cloudflare's verification first: ${e}`);
@@ -26,7 +27,7 @@
     document.head.appendChild(styleTag);
     const SiBu = document.createElement('iframe');
     document.body.appendChild(SiBu);
-    SiBu.srcdoc = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
+    SiBu.srcdoc = inj;
     function redoChl() {
       sibu = 1;
       SiBu.style.display = "none";
