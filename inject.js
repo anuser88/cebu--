@@ -63,6 +63,9 @@
         window.removeEventListener('message', ee);
       }
       shit.addEventListener('load', function() {
+        function ee(event) {
+          if (event.data && event.data.type === 'sibu') end();
+        }
         alert("Your access has expired, verify again to continue!");
         if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
         shit.contentWindow.addEventListener('beforeunload', (event) => {
@@ -70,9 +73,6 @@
             end();
             event.returnValue = ''; 
         });
-        function ee(event) {
-          if (event.data && event.data.type === 'sibu') end();
-        }
         window.addEventListener('message', ee);
       });
     }
