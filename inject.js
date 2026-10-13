@@ -4,6 +4,7 @@
   }
   catch (e) {
     alert(`Complete the Cloudflare's verification first: ${e}`);
+    throw new Error("quit");
   }
   try {
     let sibu = 0;
