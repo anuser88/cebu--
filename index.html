@@ -5,17 +5,7 @@
       SiBu
     </title>
     <script>
-      var cebu = window.fetch;
-      window.fetch = async function(url, opts = {}) {
-        const res = await cebu(url, opts);
-        if (res.status === 403) {
-          window.parent.postMessage({
-            type: 'cibu'
-          }, '*');
-        }
-        return res;
-      };
-      setInterval(()=>fetch("https://turboshare.org.uk/api/chat?limit=1"), 7000);
+      
     </script>
   </head>
   <body>
