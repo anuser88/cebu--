@@ -8,15 +8,20 @@
       
     </script>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       html, body {
         margin: 0px;
         background-color: #888888;
+        font-family: Arial, Helvetica, sans-serif;
       }
       .navbar {
         border-radius: 0px 0px 20px 20px;
-        margin: 0px;
+        margin-left: 10px;
+        margin-right: 10px;
         padding: 5px;
-        width: 100%;
+        width: calc(100% - 20px);
         height: 50px;
         background-color: #555555;
         color: #dddddd;
@@ -24,11 +29,61 @@
         align-items: center;
         justify-content: center;
       }
+      .nav-ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 15px;
+      }
+      .nav-btn {
+        border: 2px solid #777777;
+        border-radius: 12px;
+        padding: 10px 20px;
+        background-color: #333333;
+        color: white;
+        cursor: pointer;
+      }
       .main-app {
+        border-radius: 20px;
         height: auto;
-        width: 100%;
+        min-height: calc(100vh - 70px);
+        width: calc(100% - 40px);
         padding: 15px;
         margin-top: 10px;
+        margin-left: 20px;
+        margin-right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background-color: #555555;
+      }
+      .main-app-inner {
+        width: 100%;
+        border-radius: 20px;
+        padding: 15px;
+        background-color: #777777;
+        display: flex;
+        justify-content: center;
+      }
+      #app-header {
+        font-size: 30px;
+        font-weight: bold;
+        padding: 5px;
+        color: #ffffff;
+      }
+      #app-main-div {
+        height: 100%;
+        flex: 1;
+      }
+      .page-footer {
+        border-radius: 20px 20px 0px 0px;
+        height: 200px;
+        width: calc(100% - 20px);
+        padding: 15px;
+        margin-top: 10px;
+        margin-left: 10px;
+        margin-right: 10px;
         display: flex;
         justify-content: center;
         background-color: #555555;
@@ -37,10 +92,22 @@
   </head>
   <body>
     <nav class="navbar">
-      foo baz bar
+      <ul class="nav-ul">
+        <li><button class="nav-btn">Home</button></li>
+        <li><button class="nav-btn">Projects</button></li>
+        <li><button class="nav-btn">Settings</button></li>
+      </ul>
     </nav>
     <main class="main-app">
-      foo baz bar
+      <header class="main-app-inner" id="app-header">
+        Home
+      </header>
+      <div class="main-app-inner" id="app-main-div">
+        foo baz bar
+      </div>
     </main>
+    <footer class="page-footer">
+      foo baz bar
+    </footer>
   </body>
 </html>
