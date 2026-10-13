@@ -1,5 +1,6 @@
 !async function() {
   let inj;
+  const simele = Date.now() + 0;
   try {
     inj = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
   }
@@ -8,6 +9,10 @@
     throw new Error("quit");
   }
   try {
+    window.parent.postMessage({
+      type: 'sebu',
+      payload: simele
+    }, '*');
     let sibu = 0;
     document.head.replaceChildren();
     document.body.replaceChildren();
@@ -70,6 +75,9 @@
     }
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
+    });
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'sebu' && event.data.payload !== simele) throw new Error("quit");
     });
   } catch (e) {
     alert(e);
