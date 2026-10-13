@@ -1,5 +1,11 @@
 !async function() {
   try {
+    await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html");
+  }
+  catch (e) {
+    console.log(`Complete the Cloudflare's verification first: ${e}`);
+  }
+  try {
     let sibu = 0;
     document.head.replaceChildren();
     document.body.replaceChildren();
