@@ -7,6 +7,7 @@
   catch (e) {
     alert(`Complete the Cloudflare's verification first: ${e}`);
     throw new Error("quit");
+    return;
   }
   try {
     window.parent.postMessage({
@@ -59,6 +60,7 @@
         SiBu.style.display = "block";
         shit.remove();
         setTimeout(()=>sibu=0,6000);
+        window.removeEventListener('message', ee);
       }
       shit.addEventListener('load', function() {
         alert("Your access has expired, verify again to continue!");
@@ -68,19 +70,21 @@
             end();
             event.returnValue = ''; 
         });
-        window.addEventListener('message', function(event) {
+        function ee(event) {
           if (event.data && event.data.type === 'sibu') end();
-        });
+        }
+        window.addEventListener('message', ee);
       });
     }
-    window.addEventListener('message', function(event) {
+    function aa(event) {
       if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
-    });
-    window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'sebu' && event.data.payload !== simele) throw new Error("quit");
-    });
+    }
+    window.addEventListener('message', aa);
   } catch (e) {
     alert(e);
+    window.removeEventListener('message', aa);
     location.reload();
+    return;
   }
 }();
