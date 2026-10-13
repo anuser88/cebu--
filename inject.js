@@ -78,12 +78,14 @@
     }
     function aa(event) {
       if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
-      if (event.data && event.data.type === 'sebu' && event.data.payload !== simele) throw new Error("quit");
+      if (event.data && event.data.type === 'sebu' && event.data.payload !== simele) {
+        window.removeEventListener('message', aa);
+        throw new Error("quit");
+      }
     }
     window.addEventListener('message', aa);
   } catch (e) {
     alert(e);
-    window.removeEventListener('message', aa);
     location.reload();
     return;
   }
