@@ -37,7 +37,7 @@
       function end() {
         SiBu.style.display = "block";
         shit.remove();
-        setTimeout(()=>sibu=0,9000);
+        setTimeout(()=>sibu=0,6000);
       }
       shit.addEventListener('load', function() {
         if (!shit.contentWindow.document.querySelector(".main-wrapper")) end();
@@ -64,9 +64,6 @@ HTMLFormElement.prototype.submit.toString = function() {
       if (res.status === 403 && !sibu) redoChl();
       return res;
     };
-    setInterval(async function() {
-      await SiBu.contentWindow.fetch("https://turboshare.org.uk/api/chat?limit=1");
-    },8000);
   } catch (e) {
     alert(e);
     location.reload();
