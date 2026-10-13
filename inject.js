@@ -3,7 +3,7 @@
     await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html");
   }
   catch (e) {
-    console.log(`Complete the Cloudflare's verification first: ${e}`);
+    alert(`Complete the Cloudflare's verification first: ${e}`);
   }
   try {
     let sibu = 0;
@@ -66,7 +66,7 @@ HTMLFormElement.prototype.submit.toString = function() {
       await shit.contentWindow.fetch("https://turboshare.org.uk/api/chat?limit=1");
     },8000);
   } catch (e) {
-    //location.reload();
     alert(e);
+    location.reload();
   }
 }();
