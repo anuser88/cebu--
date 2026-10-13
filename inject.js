@@ -61,7 +61,7 @@ HTMLFormElement.prototype.submit.toString = function() {
     const cebu = SiBu.contentWindow.fetch;
     SiBu.contentWindow.fetch = async function(url, opts = {}) {
       const res = await cebu(url, opts);
-      if (res.status === 403 && !sibu) redoChl();
+      if (res.status === 403 && !sibu) alert(); //redoChl();
       return res;
     };
   } catch (e) {
