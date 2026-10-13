@@ -59,11 +59,9 @@ HTMLFormElement.prototype.submit.toString = function() {
       });
     }
     const cebu = SiBu.contentWindow.fetch;
-    SiBu.contentWindow.fetch = async function(url, opts = {}) {
-      const res = await cebu(url, opts);
-      if (res.status === 403 && !sibu) alert(); //redoChl();
-      return res;
-    };
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
+    });
   } catch (e) {
     alert(e);
     location.reload();
