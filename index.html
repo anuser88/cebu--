@@ -75,8 +75,8 @@
                 const chunk = fileInput.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
                 const chunkForm = new FormData();
                 chunkForm.append("file", chunk, `part_${i}.sb3`);
-                chunkForm.append("username", currentUser.username);
-                chunkForm.append("sessionToken", currentUser.sessionToken);
+                chunkForm.append("username", account.username);
+                chunkForm.append("sessionToken", account.sessionToken);
                 const res = await fetchRetry(`${WORKER_URL}/api/upload`, { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
                 if (!res || !res.success || !res.file_id) {
                   throw new Error(res?.error || "Upload failed!");
