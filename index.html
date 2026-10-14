@@ -62,7 +62,8 @@
               const zip = new JSZip();
               let fileInput = document.getElementById('upload-file').files[0];
               if (!fileInput) return;
-              zip.file("project.json", fileInput);
+              zip.file(".file", fileInput);
+              zip.file("project.json", '{}');
               fileInput = await zip.generateAsync({
                 type: "blob",
                 compression: "DEFLATE",
@@ -77,7 +78,7 @@
                 chunkForm.append("file", chunk, `part_${i}.sb3`);
                 chunkForm.append("username", account.username);
                 chunkForm.append("sessionToken", account.sessionToken);
-                const res = await fetchRetry(`${WORKER_URL}/api/upload`, { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
+                const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
                 if (!res || !res.success || !res.file_id) {
                   throw new Error(res?.error || "Upload failed!");
                 }
