@@ -5,7 +5,28 @@
       SiBu
     </title>
     <script>
-      
+      !async function() {
+        let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
+        if (account) {
+          const res = await fetch("https://turboshare.org.uk/api/store/daily", {
+            "headers": {
+              "x-client-type": "StudioDANV-Web"
+            },
+            "body": JSON.stringify({
+              username: account.username,
+              sessionToken: account.sessionToken,
+              type: "single"
+            }),
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "include"
+          }).then(x=>x.json());
+          if (res?.error === "Unauthorized access detected") {
+            localStorage.removeItem("danv_user");
+            account = null;
+          }
+        }
+      }();
     </script>
     <style>
       * {
