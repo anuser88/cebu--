@@ -46,7 +46,7 @@
           }
           return res;
         };
-        const a=()=>fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);a();
+        const a=()=>fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
         setInterval(a, 7000);`;
       SiBu.contentWindow.document.head.appendChild(proScript);
     });
