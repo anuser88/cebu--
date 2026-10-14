@@ -7,9 +7,23 @@
     <script>
       !async function() {
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        async function fetchRetry(url, opts) {
+          let res = {status: 503};
+          for (let i = 0;;i++) {
+            try {
+              res = await fetch(url, opts);
+            } catch (e) {
+              continue;
+            }
+            if (res?.status !== 503) return res;
+            if (i > 4) throw new Error("Failed to fetch");
+            await sleep(500);
+          }
+        }
         if (account) {
           try {
-            const res = await fetch("https://turboshare.org.uk/api/store/daily", {
+            const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
               "headers": {
                 "x-client-type": "StudioDANV-Web"
               },
@@ -29,7 +43,7 @@
           } catch (e) {}
         }
         if (account) {
-          fetch("https://turboshare.org.uk/api/store/daily", {
+          fetchRetry("https://turboshare.org.uk/api/store/daily", {
             "headers": {
               "x-client-type": "StudioDANV-Web"
             },
