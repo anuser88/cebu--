@@ -14,7 +14,7 @@
       type: 'sebu',
       payload: simele
     }, '*');
-    let sibu = 0;
+    var sibu = 0;
     document.head.replaceChildren();
     document.body.replaceChildren();
     const styleTag = document.createElement('style');
@@ -37,7 +37,9 @@
     SiBu.addEventListener('load', function() {
     const proScript = SiBu.contentWindow.document.createElement('script');
       proScript.textContent = `const cebu = window.fetch;
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         window.fetch = async function(url, opts = {}) {
+          while (window.parent.sibu === 1) await sleep(200);
           const res = await cebu(url, opts);
           if (res.headers.get('cf-mitigated')) {
             window.parent.postMessage({
@@ -46,8 +48,11 @@
           }
           return res;
         };
-        const a=()=>fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
-        setInterval(a, 7000);`;
+        for(;;) {
+          while (window.parent.sibu === 1) await sleep(1000);
+          await fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
+          await sleep(8000);
+        }`;
       SiBu.contentWindow.document.head.appendChild(proScript);
     });
     function redoChl() {
@@ -62,7 +67,7 @@
       function end() {
         SiBu.style.display = "block";
         shit.remove();
-        setTimeout(()=>sibu=0,6000);
+        setTimeout(()=>sibu=0,1000);
         window.removeEventListener('message', ee);
       }
       shit.addEventListener('load', function() {
