@@ -4,6 +4,7 @@
     <title>
       SiBu
     </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
       !async function() {
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
@@ -55,7 +56,36 @@
             "method": "POST",
             "mode": "cors",
             "credentials": "include"
-          })
+          });
+          document.getElementById('upl-btn').addEventListener("click", function() {
+            try {
+              const zip = new JSZip();
+              let fileInput = document.getElementById('upload-file').files[0];
+              if (!fileInput) return;
+              zip.file("project.json", fileInput);
+              fileInput = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: {level: 6}
+              });
+              const CHUNK_SIZE = 18 * 1024 * 1024;
+              const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
+              let uploadedIds = [];
+              for (let i = 0; i < totalChunks; i++) {
+                const chunk = fileInput.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                const chunkForm = new FormData();
+                chunkForm.append("file", chunk, `part_${i}.sb3`);
+                chunkForm.append("username", currentUser.username);
+                chunkForm.append("sessionToken", currentUser.sessionToken);
+                const res = await fetchRetry(`${WORKER_URL}/api/upload`, { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
+                if (!res || !res.success || !res.file_id) {
+                  throw new Error(res?.error || "Upload failed!");
+                }
+                console.log(res.file_id);
+                uploadedIds.push(res.file_id);
+              }
+            } catch (e) {alert(`Failed to upload: ${e}`)}
+          });
         }
       }();
     </script>
@@ -88,7 +118,7 @@
         display: flex;
         gap: 15px;
       }
-      .nav-btn {
+      button {
         border: 2px solid #777777;
         border-radius: 12px;
         padding: 10px 20px;
@@ -155,7 +185,8 @@
         Home
       </header>
       <div class="main-app-inner" id="app-main-div">
-        foo baz bar
+        <input type="file" id="upload-file" name="upload-file">
+        <button id="upl-btn">Upload</button>
       </div>
     </main>
     <footer class="page-footer">
