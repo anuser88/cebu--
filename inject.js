@@ -36,23 +36,26 @@
     SiBu.srcdoc = inj;
     SiBu.addEventListener('load', function() {
     const proScript = SiBu.contentWindow.document.createElement('script');
-      proScript.textContent = `const cebu = window.fetch;
-        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        window.fetch = async function(url, opts = {}) {
-          while (window.parent.sibu === 1) await sleep(200);
-          const res = await cebu(url, opts);
-          if (res.headers.get('cf-mitigated')) {
-            window.parent.postMessage({
-              type: 'cibu'
-            }, '*');
+      proScript.textContent = `
+        !async function() {
+          const cebu = window.fetch;
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          window.fetch = async function(url, opts = {}) {
+            while (window.parent.sibu === 1) await sleep(200);
+            const res = await cebu(url, opts);
+            if (res.headers.get('cf-mitigated')) {
+              window.parent.postMessage({
+                type: 'cibu'
+              }, '*');
+            }
+            return res;
+          };
+          for(;;) {
+            while (window.parent.sibu === 1) await sleep(1000);
+            await fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
+            await sleep(8000);
           }
-          return res;
-        };
-        for(;;) {
-          while (window.parent.sibu === 1) await sleep(1000);
-          await fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
-          await sleep(8000);
-        }`;
+        }();`;
       SiBu.contentWindow.document.head.appendChild(proScript);
     });
     function redoChl() {
