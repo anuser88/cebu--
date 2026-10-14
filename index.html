@@ -57,7 +57,7 @@
             "mode": "cors",
             "credentials": "include"
           });
-          document.getElementById('upl-btn').addEventListener("click", function() {
+          document.getElementById('upl-btn').addEventListener("click", async function() {
             try {
               const zip = new JSZip();
               let fileInput = document.getElementById('upload-file').files[0];
