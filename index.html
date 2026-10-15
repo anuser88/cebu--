@@ -57,11 +57,33 @@
             "mode": "cors",
             "credentials": "include"
           });
+		  async function uploadParts(fileInput) {
+		    const CHUNK_SIZE = 18 * 1024 * 1024;
+			const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
+			let uploadedIds = [];
+			for (let i = 0; i < totalChunks; i++) {
+		      const chunk = fileInput.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+			  const chunkForm = new FormData();
+			  chunkForm.append("file", chunk, `part_${i}.sb3`);
+			  chunkForm.append("username", account.username);
+			  chunkForm.append("sessionToken", account.sessionToken);
+			  const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
+			  if (!res || !res.success || !res.file_id) {
+			    throw new Error(res?.error || "Upload failed!");
+			  }
+			  console.log(res.file_id);
+			  uploadedIds.push(res.file_id);
+			}
+			return uploadedIds;
+		  }
           document.getElementById('upl-btn').addEventListener("click", async function() {
             try {
               const zip = new JSZip();
               let fileInput = document.getElementById('upload-file').files[0];
-              if (!fileInput) return;
+              if (!fileInput) {
+			    alert("Choose a file first!");
+			    return;
+			  }
               zip.file(".file", fileInput);
               zip.file("project.json", '{}');
               fileInput = await zip.generateAsync({
@@ -69,23 +91,10 @@
                 compression: "DEFLATE",
                 compressionOptions: {level: 6}
               });
-              const CHUNK_SIZE = 18 * 1024 * 1024;
-              const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
-              let uploadedIds = [];
-              for (let i = 0; i < totalChunks; i++) {
-                const chunk = fileInput.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-                const chunkForm = new FormData();
-                chunkForm.append("file", chunk, `part_${i}.sb3`);
-                chunkForm.append("username", account.username);
-                chunkForm.append("sessionToken", account.sessionToken);
-                const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
-                if (!res || !res.success || !res.file_id) {
-                  throw new Error(res?.error || "Upload failed!");
-                }
-                console.log(res.file_id);
-                uploadedIds.push(res.file_id);
-              }
+              await uploadParts(fileInput);
+			  alert("Upload succeeded!");
             } catch (e) {alert(`Failed to upload: ${e}`)}
+			document.getElementById('upload-file').value = "";
           });
         }
       }();
@@ -99,6 +108,14 @@
         background-color: #888888;
         font-family: Arial, Helvetica, sans-serif;
       }
+	  a:link, a:visited {
+		text-decoration: none;
+		color: #888888;
+	  }
+	  a:hover, a:active {
+		text-decoration: underline;
+		color: #bbbbbb;
+	  }
       .navbar {
         border-radius: 0px 0px 20px 20px;
         margin-left: 10px;
@@ -119,14 +136,23 @@
         display: flex;
         gap: 15px;
       }
-      button {
-        border: 2px solid #777777;
+      .nav-btn {
+        border: 2px solid #dddddd;
         border-radius: 12px;
         padding: 10px 20px;
         background-color: #333333;
         color: white;
         cursor: pointer;
+		transition: all 0.3s ease; 
       }
+	  .nav-btn:hover {
+		background-color: #666666;
+	  }
+	  .nav-btn:active {
+	    background-color: #aaaaaa;
+		border: 2px solid #222222;
+		color: black;
+	  }
       .main-app {
         border-radius: 20px;
         height: auto;
@@ -161,16 +187,22 @@
       }
       .page-footer {
         border-radius: 20px 20px 0px 0px;
-        height: 200px;
+        height: auto;
         width: calc(100% - 20px);
         padding: 15px;
         margin-top: 10px;
         margin-left: 10px;
         margin-right: 10px;
-        display: flex;
-        justify-content: center;
         background-color: #555555;
+		font-size: 18px;
       }
+	  .upload-div {
+	    height: 50px;
+	    width: 100%;
+        display: flex;
+		align-items: center;
+        justify-content: center;
+	  }
     </style>
   </head>
   <body>
@@ -178,20 +210,29 @@
       <ul class="nav-ul">
         <li><button class="nav-btn">Home</button></li>
         <li><button class="nav-btn">Projects</button></li>
+        <li><button class="nav-btn">Storage</button></li>
         <li><button class="nav-btn">Settings</button></li>
       </ul>
     </nav>
     <main class="main-app">
       <header class="main-app-inner" id="app-header">
-        Home
+        Storage
       </header>
       <div class="main-app-inner" id="app-main-div">
-        <input type="file" id="upload-file" name="upload-file">
-        <button id="upl-btn">Upload</button>
+	    <div class="storage">
+		  <div class="upload-div">
+		    <input type="file" id="upload-file" name="upload-file" maxfiles="1">
+	  	    <button class="nav-btn" id="upl-btn">Upload</button>
+		  </div>
+		</div>
       </div>
     </main>
     <footer class="page-footer">
-      foo baz bar
+	  A Turboshare's mod made by ezx6t.
+	  <br><br>
+	  GitHub: <a href="https://github.com/anuser88" target="_blank">ezx6t</a><br>
+	  YouTube: <a href="https://www.youtube.com/@ezx6t" target="_blank">ezx6t</a><br>
+	  Discord: <a href="https://discord.com/users/1471016298518413550" target="_blank">ezx6t</a>
     </footer>
   </body>
 </html>
