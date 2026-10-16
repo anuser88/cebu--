@@ -5,6 +5,7 @@
       SiBu
     </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
       !async function() {
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
@@ -26,11 +27,14 @@
 		function navigate(dest = "nav-home", header = "Home") {
 		  document.getElementById('nav-storage').style.display = "none";
 		  document.getElementById('nav-home').style.display = "none";
+		  document.getElementById('nav-settings').style.display = "none";
 		  document.getElementById(dest).style.display = "block";
 		  document.getElementById('app-header').textContent = header;
 		}
 		navigate();
+        document.querySelector("#app-main-div").style.display = '';
 		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
+		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
 		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
         if (account) {
           try {
@@ -69,6 +73,7 @@
           });
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
+		  document.getElementById('upload-file').disabled = false;
 		  async function uploadParts(fileInput) {
 		    const CHUNK_SIZE = 18 * 1024 * 1024;
 			const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
@@ -97,8 +102,7 @@
               if (!fileInput) {
 			    alert("Choose a file first!");
 			  } else {
-                zip.file(".file", fileInput);
-                zip.file("project.json", '{}');
+                zip.file("project.json", fileInput);
                 fileInput = await zip.generateAsync({
                   type: "blob",
                   compression: "DEFLATE",
@@ -112,7 +116,46 @@
 			document.getElementById('upload-file').disabled = false;
 			document.getElementById('upl-btn').disabled = false;
           });
-        }
+		  document.getElementById('login-btn').addEventListener("click", async function() {
+		    localStorage.removeItem("danv_user");
+		    location.reload();
+		  });
+		  document.getElementById('settings-notloggedin').style.display = 'none';
+        } else {
+		  document.getElementById('login-btn').addEventListener("click", async function() {
+			document.getElementById('login-btn').disabled = true;
+			if (document.querySelector('[name="cf-turnstile-response"]')?.value) {
+			  try {
+			    const username = prompt("Username:").trim();
+			    const pw = prompt("Password:").trim();
+				const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
+				turnstile.reset();
+				const deviceId = `dev_${Math.random()}`;
+				const res = await fetch('https://turboshare.org.uk/api/auth/login', { 
+                  method: 'POST', 
+                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+                  body: JSON.stringify({loginId: username, password: pw, deviceId, turnstileToken}) 
+                }).then(x=>x.json());
+				account = { 
+                  username: res.username, 
+                  sessionToken: res.sessionToken, 
+                  avt: res.avt, 
+                  role: res.role,
+                  email: res.email || "",
+                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+                  frame: res.frame || null,
+                  chatFrame: res.chatFrame || res.chat_frame || "",
+                  banner: res.banner || ""
+                };
+				localStorage.setItem('danv_user', JSON.stringify(account));
+				location.reload();
+			  } catch (e) {alert(e)}
+			} else alert("Verify you are not a robot first!");
+			document.getElementById('login-btn').disabled = false;
+		  });
+		  document.getElementById('settings-loggedin').style.display = 'none';
+		}
       }();
     </script>
     <style>
@@ -184,7 +227,7 @@
         margin-top: 10px;
         margin-left: 20px;
         margin-right: 20px;
-        display: flex;
+		display: flex;
         flex-direction: column;
         gap: 10px;
         background-color: #555555;
@@ -225,6 +268,13 @@
 		align-items: center;
         justify-content: center;
 	  }
+	  #settings-notloggedin {
+	    display: flex;
+		flex-direction: column;
+		align-items: center;
+        justify-content: center;
+		gap: 10px;
+	  }
     </style>
   </head>
   <body>
@@ -233,14 +283,14 @@
         <li><button class="nav-btn nav-active" id="home-btn">Home</button></li>
         <li><button class="nav-btn" disabled>Projects</button></li>
         <li><button class="nav-btn nav-active" id="storage-btn">Storage</button></li>
-        <li><button class="nav-btn" disabled>Settings</button></li>
+        <li><button class="nav-btn nav-active" id="settings-btn">Settings</button></li>
       </ul>
     </nav>
     <main class="main-app">
       <header class="main-app-inner" id="app-header">
         cebu--
       </header>
-      <div class="main-app-inner" id="app-main-div">
+      <div class="main-app-inner" id="app-main-div" style="display:none;">
 	    <div id="nav-home">
 		  home
 		</div>
@@ -248,6 +298,15 @@
 		  <div class="upload-div">
 		    <input type="file" id="upload-file" name="upload-file" maxfiles="1" disabled>
 	  	    <button class="nav-btn" id="upl-btn" disabled>Upload</button>
+		  </div>
+		</div>
+		<div id="nav-settings">
+		  <div id="settings-loggedin">
+		    <button class="nav-btn nav-active" id="logout-btn">Log out</button>
+		  </div>
+		  <div id="settings-notloggedin">
+		    <div class="cf-turnstile" data-sitekey="0x4AAAAAAFBN7qkTYZA_DG8S" data-theme="auto" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
+			<button class="nav-btn nav-active" id="login-btn">Log in</button>
 		  </div>
 		</div>
       </div>
