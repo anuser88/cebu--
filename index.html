@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
       !async function() {
+	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         async function fetchRetry(url, opts) {
@@ -18,10 +19,19 @@
               continue;
             }
             if (res?.status !== 503) return res;
-            if (i > 4) throw new Error("Failed to fetch");
+            if (i > 7) throw new Error("Failed to fetch");
             await sleep(500);
           }
         }
+		function navigate(dest = "nav-home", header = "Home") {
+		  document.getElementById('nav-storage').style.display = "none";
+		  document.getElementById('nav-home').style.display = "none";
+		  document.getElementById(dest).style.display = "block";
+		  document.getElementById('app-header').textContent = header;
+		}
+		navigate();
+		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
+		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
         if (account) {
           try {
             const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
@@ -57,6 +67,8 @@
             "mode": "cors",
             "credentials": "include"
           });
+		  document.getElementById('upl-btn').classList.add('nav-active');
+		  document.getElementById('upl-btn').disabled = false;
 		  async function uploadParts(fileInput) {
 		    const CHUNK_SIZE = 18 * 1024 * 1024;
 			const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
@@ -77,24 +89,28 @@
 			return uploadedIds;
 		  }
           document.getElementById('upl-btn').addEventListener("click", async function() {
+			document.getElementById('upload-file').disabled = true;
+			document.getElementById('upl-btn').disabled = true;
             try {
               const zip = new JSZip();
               let fileInput = document.getElementById('upload-file').files[0];
               if (!fileInput) {
 			    alert("Choose a file first!");
-			    return;
+			  } else {
+                zip.file(".file", fileInput);
+                zip.file("project.json", '{}');
+                fileInput = await zip.generateAsync({
+                  type: "blob",
+                  compression: "DEFLATE",
+                  compressionOptions: {level: 6}
+                });
+                await uploadParts(fileInput);
+			    alert("Upload succeeded!");
 			  }
-              zip.file(".file", fileInput);
-              zip.file("project.json", '{}');
-              fileInput = await zip.generateAsync({
-                type: "blob",
-                compression: "DEFLATE",
-                compressionOptions: {level: 6}
-              });
-              await uploadParts(fileInput);
-			  alert("Upload succeeded!");
             } catch (e) {alert(`Failed to upload: ${e}`)}
 			document.getElementById('upload-file').value = "";
+			document.getElementById('upload-file').disabled = false;
+			document.getElementById('upl-btn').disabled = false;
           });
         }
       }();
@@ -136,19 +152,25 @@
         display: flex;
         gap: 15px;
       }
-      .nav-btn {
-        border: 2px solid #dddddd;
+	  .nav-btn {
+	    border: 2px solid #999999;
         border-radius: 12px;
         padding: 10px 20px;
+        background-color: #555555;
+        color: #dddddd;
+		cursor: default;
+	  }
+	  .nav-btn.nav-active {
+        border: 2px solid #dddddd;
         background-color: #333333;
         color: white;
-        cursor: pointer;
-		transition: all 0.3s ease; 
+		cursor: pointer;
+		transition: all 0.3s ease;
       }
-	  .nav-btn:hover {
+	  .nav-btn.nav-active:hover {
 		background-color: #666666;
 	  }
-	  .nav-btn:active {
+	  .nav-btn.nav-active:active {
 	    background-color: #aaaaaa;
 		border: 2px solid #222222;
 		color: black;
@@ -208,27 +230,30 @@
   <body>
     <nav class="navbar">
       <ul class="nav-ul">
-        <li><button class="nav-btn">Home</button></li>
-        <li><button class="nav-btn">Projects</button></li>
-        <li><button class="nav-btn">Storage</button></li>
-        <li><button class="nav-btn">Settings</button></li>
+        <li><button class="nav-btn nav-active" id="home-btn">Home</button></li>
+        <li><button class="nav-btn" disabled>Projects</button></li>
+        <li><button class="nav-btn nav-active" id="storage-btn">Storage</button></li>
+        <li><button class="nav-btn" disabled>Settings</button></li>
       </ul>
     </nav>
     <main class="main-app">
       <header class="main-app-inner" id="app-header">
-        Storage
+        cebu--
       </header>
       <div class="main-app-inner" id="app-main-div">
-	    <div class="storage">
+	    <div id="nav-home">
+		  home
+		</div>
+	    <div id="nav-storage">
 		  <div class="upload-div">
-		    <input type="file" id="upload-file" name="upload-file" maxfiles="1">
-	  	    <button class="nav-btn" id="upl-btn">Upload</button>
+		    <input type="file" id="upload-file" name="upload-file" maxfiles="1" disabled>
+	  	    <button class="nav-btn" id="upl-btn" disabled>Upload</button>
 		  </div>
 		</div>
       </div>
     </main>
     <footer class="page-footer">
-	  A Turboshare's mod made by ezx6t.
+	  A Turboshare's remake by ezx6t.
 	  <br><br>
 	  GitHub: <a href="https://github.com/anuser88" target="_blank">ezx6t</a><br>
 	  YouTube: <a href="https://www.youtube.com/@ezx6t" target="_blank">ezx6t</a><br>
