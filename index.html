@@ -71,6 +71,7 @@
             "mode": "cors",
             "credentials": "include"
           });
+		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
@@ -116,7 +117,7 @@
 			document.getElementById('upload-file').disabled = false;
 			document.getElementById('upl-btn').disabled = false;
           });
-		  document.getElementById('login-btn').addEventListener("click", async function() {
+		  document.getElementById('logout-btn').addEventListener("click", async function() {
 		    localStorage.removeItem("danv_user");
 		    location.reload();
 		  });
@@ -259,7 +260,6 @@
         margin-left: 10px;
         margin-right: 10px;
         background-color: #555555;
-		font-size: 18px;
       }
 	  .upload-div {
 	    height: 50px;
@@ -268,12 +268,20 @@
 		align-items: center;
         justify-content: center;
 	  }
+	  #settings-loggedin {
+	    display: flex;
+		flex-direction: column;
+		align-items: center;
+        justify-content: center;
+	  }
 	  #settings-notloggedin {
 	    display: flex;
 		flex-direction: column;
 		align-items: center;
         justify-content: center;
-		gap: 10px;
+	  }
+	  .txt {
+	    font-size: 18px;
 	  }
     </style>
   </head>
@@ -302,6 +310,7 @@
 		</div>
 		<div id="nav-settings">
 		  <div id="settings-loggedin">
+		    <p class="txt" id="lbl-lia"></p>
 		    <button class="nav-btn nav-active" id="logout-btn">Log out</button>
 		  </div>
 		  <div id="settings-notloggedin">
@@ -311,7 +320,7 @@
 		</div>
       </div>
     </main>
-    <footer class="page-footer">
+    <footer class="page-footer txt">
 	  A Turboshare's remake by ezx6t.
 	  <br><br>
 	  GitHub: <a href="https://github.com/anuser88" target="_blank">ezx6t</a><br>
