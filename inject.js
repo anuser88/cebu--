@@ -10,11 +10,12 @@
     return;
   }
   try {
-    window.parent.postMessage({
+    window.postMessage({
       type: 'sebu',
       payload: simele
     }, '*');
     var sibu = 0;
+	let SiBu;
     document.head.replaceChildren();
     document.body.replaceChildren();
     const styleTag = document.createElement('style');
@@ -31,33 +32,55 @@
         }
     `;
     document.head.appendChild(styleTag);
-    const SiBu = document.createElement('iframe');
-    document.body.appendChild(SiBu);
-    SiBu.srcdoc = inj;
-    SiBu.addEventListener('load', function() {
-    const proScript = SiBu.contentWindow.document.createElement('script');
-      proScript.textContent = `
-        !async function() {
-          const cebu = window.fetch;
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-          window.fetch = async function(url, opts = {}) {
-            while (window.parent.sibu === 1) await sleep(200);
-            const res = await cebu(url, opts);
-            if (res.headers.get('cf-mitigated')) {
-              window.parent.postMessage({
-                type: 'cibu'
-              }, '*');
+	!async function(){for(;;){
+	  document.title = SiBu?.contentWindow?.document?.title ?? "cebu--";
+	  await sleep(200);
+	}}();
+	function bubu() {
+      SiBu = document.createElement('iframe');
+      document.body.prepend(SiBu);
+	  let rl = 0;
+  	  SiBu.src = "https://turboshare.org.uk";
+  	  SiBu.contentWindow.document.open();
+      SiBu.contentWindow.document.write(inj);
+      SiBu.contentWindow.document.close();
+      SiBu.addEventListener('load', function() {
+	    if (rl) {
+		  SiBu.remove();
+		  new Promise(bubu);
+		  return;
+	    }
+	    rl=1;
+        const proScript = SiBu.contentWindow.document.createElement('script');
+        proScript.textContent = `
+          !async function() {
+            const cebu = window.fetch;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            window.fetch = async function(url, opts = {}) {
+              while (window.parent.sibu === 1) await sleep(200);
+              const res = await cebu(url, opts);
+              if (res.headers.get('cf-mitigated')) {
+                window.parent.postMessage({
+                  type: 'cibu'
+                }, '*');
+              }
+              return res;
+            };
+            for(;;) {
+              while (window.parent.sibu === 1) await sleep(1000);
+              await fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()}\`);
+              await sleep(8000);
             }
-            return res;
-          };
-          for(;;) {
-            while (window.parent.sibu === 1) await sleep(1000);
-            await fetch(\`https://turboshare.org.uk/api/chat?limit=1&_t=\${Date.now()+0}\`);
-            await sleep(8000);
-          }
-        }();`;
-      SiBu.contentWindow.document.head.appendChild(proScript);
-    });
+          }();
+		  !async function(){for(;;){
+			const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+	        parent.document.title = document?.title ?? "cebu--";
+	        await sleep(200);
+     	  }}();`;
+        SiBu.contentWindow.document.head.appendChild(proScript);
+      });
+	}
+	bubu();
     function redoChl() {
       sibu = 1;
       SiBu.style.display = "none";

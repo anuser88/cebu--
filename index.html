@@ -2,15 +2,18 @@
 <html>
   <head>
     <title>
-      SiBu
+      cebu--
     </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	<script src="https://js.hcaptcha.com/1/api.js?recaptchacompat=off" async defer></script>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script>
       !async function() {
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+		navigate();
+		document.querySelector("#app-main-div").style.display = 'block';
         async function fetchRetry(url, opts) {
           let res = {status: 503};
           for (let i = 0;;i++) {
@@ -30,14 +33,20 @@
 		  document.getElementById('nav-settings').style.display = "none";
 		  document.getElementById(dest).style.display = "block";
 		  document.getElementById('app-header').textContent = header;
+		  document.title = `cebu-- | ${header}`;
 		}
-		navigate();
-        document.querySelector("#app-main-div").style.display = '';
-		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
-		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
-		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
-        if (account) {
+		
+        if (account?.username) {
           try {
+		    async function waitVerify() {
+			  for(;;) {
+			    if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
+				console.log(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value);
+				await sleep(200);
+			  }
+			}
+			await waitVerify();
+		    let hcaptchaToken = document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value;
             const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
               "headers": {
                 "x-client-type": "StudioDANV-Web"
@@ -45,7 +54,8 @@
               "body": JSON.stringify({
                 username: account.username,
                 sessionToken: account.sessionToken,
-                type: "single"
+                type: "single",
+				hcaptchaToken
               }),
               "method": "POST",
               "mode": "cors",
@@ -56,8 +66,14 @@
               account = null;
             }
           } catch (e) {}
-        }
-        if (account) {
+        } else {
+		  localStorage.removeItem("danv_user");
+		}
+		document.getElementById('verify-shit').remove();
+		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
+		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
+		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
+        if (account?.username) {
           fetchRetry("https://turboshare.org.uk/api/store/daily", {
             "headers": {
               "x-client-type": "StudioDANV-Web"
@@ -125,17 +141,16 @@
         } else {
 		  document.getElementById('login-btn').addEventListener("click", async function() {
 			document.getElementById('login-btn').disabled = true;
-			if (document.querySelector('[name="cf-turnstile-response"]')?.value) {
+			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
 			  try {
 			    const username = prompt("Username:").trim();
 			    const pw = prompt("Password:").trim();
-				const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
-				turnstile.reset();
+				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
 				const res = await fetch('https://turboshare.org.uk/api/auth/login', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
-                  body: JSON.stringify({loginId: username, password: pw, deviceId, turnstileToken}) 
+                  body: JSON.stringify({loginId: username, password: pw, deviceId, hcaptchaToken}) 
                 }).then(x=>x.json());
 				account = { 
                   username: res.username, 
@@ -283,6 +298,22 @@
 	  .txt {
 	    font-size: 18px;
 	  }
+	  #verify-shit {
+	    padding: 15px;
+		background-color: #555555;
+		border-radius: 20px;
+	    display: flex;
+		align-items: center;
+        justify-content: center;
+		gap: 10px;
+	  }
+	  #home-things {
+	    width: 100%;
+	    display: flex;
+		flex-direction: column;
+		align-items: center;
+        justify-content: center;
+	  }
     </style>
   </head>
   <body>
@@ -296,11 +327,17 @@
     </nav>
     <main class="main-app">
       <header class="main-app-inner" id="app-header">
-        cebu--
+        cebu-- is loading...
       </header>
       <div class="main-app-inner" id="app-main-div" style="display:none;">
 	    <div id="nav-home">
-		  home
+		  <div id="verify-shit">
+		    <div class="h-captcha" id="hcaptchaShit" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="display:flex;justify-content:center;"></div>
+			<button class="nav-btn nav-active" onclick="document.querySelector('#hcaptchaShit [name=\'h-captcha-response\']').value='shit';">Skip</button>
+		  </div>
+		  <div id="home-things">
+		    <p class="txt">Home</p>
+		  </div>
 		</div>
 	    <div id="nav-storage">
 		  <div class="upload-div">
@@ -314,7 +351,7 @@
 		    <button class="nav-btn nav-active" id="logout-btn">Log out</button>
 		  </div>
 		  <div id="settings-notloggedin">
-		    <div class="cf-turnstile" data-sitekey="0x4AAAAAAFBN7qkTYZA_DG8S" data-theme="auto" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
+		    <div class="h-captcha" id="hcaptchaShit2" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="margin-bottom: 12px; display: flex; justify-content: center;"></div>
 			<button class="nav-btn nav-active" id="login-btn">Log in</button>
 		  </div>
 		</div>
