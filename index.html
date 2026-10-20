@@ -6,11 +6,16 @@
     </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<script src="https://js.hcaptcha.com/1/api.js?recaptchacompat=off" async defer></script>
-	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
+		let ano = 0;
+		if (localStorage.getItem("danv_user_ano")) {
+		  account = JSON.parse(localStorage.getItem("danv_user_ano"));
+		  ano = 1;
+		}
         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 		navigate();
 		document.querySelector("#app-main-div").style.display = 'block';
@@ -35,39 +40,40 @@
 		  document.getElementById('app-header').textContent = header;
 		  document.title = `cebu-- | ${header}`;
 		}
-		
-        if (account?.username) {
-          try {
-		    async function waitVerify() {
-			  for(;;) {
-			    if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
-				console.log(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value);
-				await sleep(200);
+		if (!ano) {
+          if (account?.username) {
+            try {
+		      async function waitVerify() {
+			    for(;;) {
+			      if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
+				  console.log(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value);
+				  await sleep(200);
+			    }
 			  }
-			}
-			await waitVerify();
-		    let hcaptchaToken = document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value;
-            const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
-              "headers": {
-                "x-client-type": "StudioDANV-Web"
-              },
-              "body": JSON.stringify({
-                username: account.username,
-                sessionToken: account.sessionToken,
-                type: "single",
-				hcaptchaToken
-              }),
-              "method": "POST",
-              "mode": "cors",
-              "credentials": "include"
-            }).then(x=>x.json());
-            if (res?.error === "Unauthorized access detected") {
-              localStorage.removeItem("danv_user");
-              account = null;
-            }
-          } catch (e) {}
-        } else {
-		  localStorage.removeItem("danv_user");
+			  await waitVerify();
+		      let hcaptchaToken = document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value;
+              const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
+                "headers": {
+                  "x-client-type": "StudioDANV-Web"
+                },
+                "body": JSON.stringify({
+                  username: account.username,
+                  sessionToken: account.sessionToken,
+                  type: "single",
+			      hcaptchaToken
+                }),
+                "method": "POST",
+                "mode": "cors",
+                "credentials": "include"
+              }).then(x=>x.json());
+              if (res?.error === "Unauthorized access detected") {
+                localStorage.removeItem("danv_user");
+                account = null;
+              }
+            } catch (e) {}
+          } else {
+		    localStorage.removeItem("danv_user");
+		  }
 		}
 		document.getElementById('verify-shit').remove();
 		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
@@ -88,51 +94,6 @@
             "credentials": "include"
           });
 		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
-		  document.getElementById('upl-btn').classList.add('nav-active');
-		  document.getElementById('upl-btn').disabled = false;
-		  document.getElementById('upload-file').disabled = false;
-		  async function uploadParts(fileInput) {
-		    const CHUNK_SIZE = 18 * 1024 * 1024;
-			const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
-			let uploadedIds = [];
-			for (let i = 0; i < totalChunks; i++) {
-		      const chunk = fileInput.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-			  const chunkForm = new FormData();
-			  chunkForm.append("file", chunk, `part_${i}.sb3`);
-			  chunkForm.append("username", account.username);
-			  chunkForm.append("sessionToken", account.sessionToken);
-			  const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
-			  if (!res || !res.success || !res.file_id) {
-			    throw new Error(res?.error || "Upload failed!");
-			  }
-			  console.log(res.file_id);
-			  uploadedIds.push(res.file_id);
-			}
-			return uploadedIds;
-		  }
-          document.getElementById('upl-btn').addEventListener("click", async function() {
-			document.getElementById('upload-file').disabled = true;
-			document.getElementById('upl-btn').disabled = true;
-            try {
-              const zip = new JSZip();
-              let fileInput = document.getElementById('upload-file').files[0];
-              if (!fileInput) {
-			    alert("Choose a file first!");
-			  } else {
-                zip.file("project.json", fileInput);
-                fileInput = await zip.generateAsync({
-                  type: "blob",
-                  compression: "DEFLATE",
-                  compressionOptions: {level: 6}
-                });
-                await uploadParts(fileInput);
-			    alert("Upload succeeded!");
-			  }
-            } catch (e) {alert(`Failed to upload: ${e}`)}
-			document.getElementById('upload-file').value = "";
-			document.getElementById('upload-file').disabled = false;
-			document.getElementById('upl-btn').disabled = false;
-          });
 		  document.getElementById('logout-btn').addEventListener("click", async function() {
 		    localStorage.removeItem("danv_user");
 		    location.reload();
@@ -141,17 +102,19 @@
         } else {
 		  document.getElementById('login-btn').addEventListener("click", async function() {
 			document.getElementById('login-btn').disabled = true;
+			document.getElementById('login-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
 			  try {
 			    const username = prompt("Username:").trim();
 			    const pw = prompt("Password:").trim();
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
-				const res = await fetch('https://turboshare.org.uk/api/auth/login', { 
+				const res = await fetchRetry('https://turboshare.org.uk/api/auth/login', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
                   body: JSON.stringify({loginId: username, password: pw, deviceId, hcaptchaToken}) 
                 }).then(x=>x.json());
+				if (!res.success) throw new Error(res.error ?? 'Unknown error');
 				account = { 
                   username: res.username, 
                   sessionToken: res.sessionToken, 
@@ -167,10 +130,124 @@
 				localStorage.setItem('danv_user', JSON.stringify(account));
 				location.reload();
 			  } catch (e) {alert(e)}
+			  hcaptcha.reset("hcaptchaShit2");
 			} else alert("Verify you are not a robot first!");
 			document.getElementById('login-btn').disabled = false;
+			document.getElementById('login-btn').classList.add('nav-active');
 		  });
 		  document.getElementById('settings-loggedin').style.display = 'none';
+		}
+		if (ano) {
+		  document.getElementById('hcaptchaShit2').style.display = 'none';
+		  document.getElementById('lbl-amr').style.display = 'none';
+		  document.getElementById('ano-ena-btn').style.display = 'none';
+		  document.getElementById('settings-loggedin').style.display = 'none';
+		  document.getElementById('settings-notloggedin').style.display = 'none';
+		  document.getElementById('ano-dis-btn').addEventListener("click", async function() {
+		    localStorage.removeItem("danv_user_ano");
+		    location.reload();
+		  });
+		  document.getElementById('upl-btn').classList.add('nav-active');
+		  document.getElementById('upl-btn').disabled = false;
+		  document.getElementById('upload-file').disabled = false;
+		  async function uploadParts(fileInput, what = "file") {
+		    const CHUNK_SIZE = 18 * 1024 * 1024;
+		    const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
+			let iv = Array.from({length: totalChunks}, (a, b) => b + 1);
+			let uploadedIds = Array(totalChunks).fill();
+			let wk = [];
+			for (let i = 0; i < Math.min(totalChunks, 4); i++) {
+			  wk.push(uploadPartsInner(iv, uploadedIds, what, fileInput, totalChunks, CHUNK_SIZE));
+			}
+			await Promise.all(wk);
+			document.getElementById('upl-stat').textContent = "";
+			console.log(uploadedIds);
+			return uploadedIds;
+		  }
+		  async function uploadPartsInner(iv, ui, wh, fi, tc, cs) {
+		    let i;
+			while (i = iv.shift()) {
+			  i--;
+			  document.getElementById('upl-stat').textContent = `Uploading ${wh}(fragment ${i+1}/${tc})`;
+		      const chunk = fi.slice(i * cs, (i + 1) * cs);
+			  const chunkForm = new FormData();
+			  chunkForm.append("file", chunk, `part_${i}.sb3`);
+			  chunkForm.append("username", account.username);
+			  chunkForm.append("sessionToken", account.sessionToken);
+			  const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
+			  if (!res || !res.success || !res.file_id) {
+			    throw new Error(res?.error || "Upload failed!");
+			  }
+			  ui[i] = res.file_id;
+			}
+			console.log(i);
+		  }
+          document.getElementById('upl-btn').addEventListener("click", async function() {
+			document.getElementById('upload-file').disabled = true;
+			document.getElementById('upl-btn').classList.remove('nav-active');
+			document.getElementById('upl-btn').disabled = true;
+            try {
+              let fileInput = document.getElementById('upload-file').files[0];
+              if (!fileInput) {
+			    alert("Choose a file first!");
+			  } else {
+			    document.getElementById('upl-stat').textContent = `Compressing file...`;
+                const zip = new JSZip();
+                zip.file("project.json", fileInput);
+                fileInput = await zip.generateAsync({
+                  type: "blob",
+                  compression: "DEFLATE",
+                  compressionOptions: {level: 4}
+                });
+                await uploadParts(fileInput);
+			    alert("Upload succeeded!");
+			  }
+            } catch (e) {alert(`Failed to upload: ${e}`)}
+			document.getElementById('upload-file').value = "";
+			document.getElementById('upload-file').disabled = false;
+			document.getElementById('upl-btn').classList.add('nav-active');
+			document.getElementById('upl-btn').disabled = false;
+          });
+		} else {
+		  document.getElementById('ano-dis-btn').style.display = 'none';
+		  document.getElementById('ano-ena-btn').addEventListener("click", async function() {
+		    document.getElementById('ano-ena-btn').disabled = true;
+			document.getElementById('ano-ena-btn').classList.remove('nav-active');
+			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+			  try {
+			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
+				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+				const deviceId = `dev_${Math.random()}`;
+				const referralCode = '';
+				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+                  method: 'POST', 
+                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+                }).then(x=>x.json());
+				if (!res.success) throw new Error(res.error ?? 'Unknown error');
+				account = { 
+                  username: res.username, 
+                  sessionToken: res.sessionToken, 
+                  avt: res.avt, 
+                  role: res.role,
+                  email: res.email || "",
+                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+                  frame: res.frame || null,
+                  chatFrame: res.chatFrame || res.chat_frame || "",
+                  banner: res.banner || ""
+                };
+				localStorage.setItem('danv_user_ano', JSON.stringify(account));
+				location.reload();
+			  } catch (e) {alert(e)}
+			  hcaptcha.reset("hcaptchaShit2");
+			} else alert("Verify you are not a robot first!");
+			document.getElementById('ano-ena-btn').disabled = false;
+			document.getElementById('ano-ena-btn').classList.add('nav-active');
+		  });
 		}
       }();
     </script>
@@ -282,21 +359,19 @@
         display: flex;
 		align-items: center;
         justify-content: center;
+		gap: 10px;
 	  }
-	  #settings-loggedin {
+	  #settings-loggedin, #settings-notloggedin, #settings-ano {
 	    display: flex;
 		flex-direction: column;
 		align-items: center;
         justify-content: center;
-	  }
-	  #settings-notloggedin {
-	    display: flex;
-		flex-direction: column;
-		align-items: center;
-        justify-content: center;
+		margin-top: 10px;
+		gap: 10px;
 	  }
 	  .txt {
 	    font-size: 18px;
+		margin: 5px;
 	  }
 	  #verify-shit {
 	    padding: 15px;
@@ -309,6 +384,12 @@
 	  }
 	  #home-things {
 	    width: 100%;
+	    display: flex;
+		flex-direction: column;
+		align-items: center;
+        justify-content: center;
+	  }
+	  #nav-storage-inner {
 	    display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -340,25 +421,34 @@
 		  </div>
 		</div>
 	    <div id="nav-storage">
-		  <div class="upload-div">
-		    <input type="file" id="upload-file" name="upload-file" maxfiles="1" disabled>
-	  	    <button class="nav-btn" id="upl-btn" disabled>Upload</button>
+		  <div id="nav-storage-inner">
+		    <p class="txt" id="lbl-amr">Anomymous mode is required for write access!</p>
+		    <div class="upload-div">
+		      <input type="file" id="upload-file" name="upload-file" maxfiles="1" disabled>
+	  	      <button class="nav-btn" id="upl-btn" disabled>Upload</button>
+		      <p class="txt" id="upl-stat"></p>
+		    </div>
 		  </div>
 		</div>
 		<div id="nav-settings">
+		  <div class="h-captcha" id="hcaptchaShit2" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="margin-bottom: 12px; display: flex; justify-content: center;"></div>
 		  <div id="settings-loggedin">
 		    <p class="txt" id="lbl-lia"></p>
 		    <button class="nav-btn nav-active" id="logout-btn">Log out</button>
 		  </div>
 		  <div id="settings-notloggedin">
-		    <div class="h-captcha" id="hcaptchaShit2" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="margin-bottom: 12px; display: flex; justify-content: center;"></div>
 			<button class="nav-btn nav-active" id="login-btn">Log in</button>
+		  </div>
+		  <div id="settings-ano">
+		    <button class="nav-btn nav-active" id="ano-ena-btn">Enable anonymous mode</button>
+		    <button class="nav-btn nav-active" id="ano-dis-btn">Disable anonymous mode</button>
 		  </div>
 		</div>
       </div>
     </main>
     <footer class="page-footer txt">
-	  A Turboshare's remake by ezx6t.
+	  A Turboshare's remake by ezx6t.<br>
+	  GitHub Repo: <a href="https://github.com/anuser88/cebu--" target="_blank">cebu--</a>
 	  <br><br>
 	  GitHub: <a href="https://github.com/anuser88" target="_blank">ezx6t</a><br>
 	  YouTube: <a href="https://www.youtube.com/@ezx6t" target="_blank">ezx6t</a><br>

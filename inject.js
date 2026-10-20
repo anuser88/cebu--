@@ -16,6 +16,7 @@
     }, '*');
     var sibu = 0;
 	let SiBu;
+	let cceebbuu = 0;
     document.head.replaceChildren();
     document.body.replaceChildren();
     const styleTag = document.createElement('style');
@@ -33,8 +34,7 @@
     `;
     document.head.appendChild(styleTag);
 	!async function(){for(;;){
-	  document.title = SiBu?.contentWindow?.document?.title ?? "cebu--";
-	  await sleep(200);
+	  document.title=SiBu?.contentWindow?.document?.title??"cebu--";if(cceebbuu)break;await sleep(200);
 	}}();
 	function bubu() {
       SiBu = document.createElement('iframe');
@@ -111,6 +111,7 @@
       if (event.data && event.data.type === 'cibu' && !sibu) redoChl();
       if (event.data && event.data.type === 'sebu' && event.data.payload !== simele) {
         window.removeEventListener('message', aa);
+		cceebbuu = 1;
         throw new Error("quit");
       }
     }
