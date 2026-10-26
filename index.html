@@ -5,13 +5,31 @@
       cebu--
     </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-	<script src="https://js.hcaptcha.com/1/api.js?recaptchacompat=off" async defer></script>
 	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
+	    !async function(){
+		  const hcaptcha = document.createElement('script');
+		  hcaptcha.async = true;
+		  hcaptcha.defer = true;
+		  hcaptcha.textContent = await fetch("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off").then(x=>x.text());
+		  document.head.appendChild(hcaptcha);
+		}();
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
 		let ano = 0;
+		let fs = {
+		  fmap: [
+		    'd',
+			{}
+		  ],
+		  cfg: {
+		    compressionLvl: 4
+		  }
+		};
+		let dirStack = [];
+		let chf = '';
+		var sksh = 0;
 		if (localStorage.getItem("danv_user_ano")) {
 		  account = JSON.parse(localStorage.getItem("danv_user_ano"));
 		  ano = 1;
@@ -40,14 +58,24 @@
 		  document.getElementById('app-header').textContent = header;
 		  document.title = `cebu-- | ${header}`;
 		}
-		if (!ano) {
+		let cecebi;
+		try {
+		  cecebi = await fetch(`https://turboshare.org.uk/api/user/${account.username}?_t=${Date.now()}`).then(x=>x.json());
+		} catch (e) {}
+		if (!ano && cecebi) {
+		  document.getElementById('verify-shit').style.display = 'flex';
           if (account?.username) {
             try {
+			  const vnTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
+			  const today = `${String(vnTime.getDate()).padStart(2, '0')}/${String(vnTime.getMonth() + 1).padStart(2, '0')}/${vnTime.getFullYear()}`;
+			  let t;
+			  if (cecebi?.dailyLogin?.partner && cecebi?.dailyLogin?.coupleLastClaim !== today) t = 'couple';
+			  if (cecebi?.dailyLogin?.lastClaim !== today) t = 'single';
+			  if (!t) throw new Error('');
 		      async function waitVerify() {
 			    for(;;) {
 			      if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
-				  console.log(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value);
-				  await sleep(200);
+				  await sleep(75);
 			    }
 			  }
 			  await waitVerify();
@@ -59,7 +87,7 @@
                 "body": JSON.stringify({
                   username: account.username,
                   sessionToken: account.sessionToken,
-                  type: "single",
+                  type: t,
 			      hcaptchaToken
                 }),
                 "method": "POST",
@@ -68,11 +96,12 @@
               }).then(x=>x.json());
               if (res?.error === "Unauthorized access detected") {
                 localStorage.removeItem("danv_user");
-                account = null;
+                location.reload();
               }
             } catch (e) {}
           } else {
 		    localStorage.removeItem("danv_user");
+			location.reload();
 		  }
 		}
 		document.getElementById('verify-shit').remove();
@@ -80,19 +109,6 @@
 		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
 		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
         if (account?.username) {
-          fetchRetry("https://turboshare.org.uk/api/store/daily", {
-            "headers": {
-              "x-client-type": "StudioDANV-Web"
-            },
-            "body": JSON.stringify({
-              username: account.username,
-              sessionToken: account.sessionToken,
-              type: "couple"
-            }),
-            "method": "POST",
-            "mode": "cors",
-            "credentials": "include"
-          });
 		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
 		  document.getElementById('logout-btn').addEventListener("click", async function() {
 		    localStorage.removeItem("danv_user");
@@ -135,16 +151,94 @@
 			document.getElementById('login-btn').disabled = false;
 			document.getElementById('login-btn').classList.add('nav-active');
 		  });
+		  document.getElementById('signup-btn').addEventListener("click", async function() {
+		    document.getElementById('signup-btn').disabled = true;
+			document.getElementById('signup-btn').classList.remove('nav-active');
+			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+			  try {
+			    const username = prompt("Username:").trim();
+			    const pw = prompt("Password:").trim();
+				const email = prompt("Email:").trim();
+				const displayName = prompt("Display name:").trim();
+				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+				const deviceId = `dev_${Math.random()}`;
+				const referralCode = prompt("Referral code (optional):").trim();
+				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+                  method: 'POST', 
+                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+                }).then(x=>x.json());
+				if (!res.success) throw new Error(res.error ?? 'Unknown error');
+				account = { 
+                  username: res.username, 
+                  sessionToken: res.sessionToken, 
+                  avt: res.avt, 
+                  role: res.role,
+                  email: res.email || "",
+                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+                  frame: res.frame || null,
+                  chatFrame: res.chatFrame || res.chat_frame || "",
+                  banner: res.banner || ""
+                };
+				localStorage.setItem('danv_user', JSON.stringify(account));
+				location.reload();
+			  } catch (e) {alert(e)}
+			  hcaptcha.reset("hcaptchaShit2");
+			} else alert("Verify you are not a robot first!");
+			document.getElementById('signup-btn').disabled = false;
+			document.getElementById('signup-btn').classList.add('nav-active');
+		  });
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		}
+		let updFsMap = async function(){};
 		if (ano) {
-		  document.getElementById('hcaptchaShit2').style.display = 'none';
 		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('ano-ena-btn').style.display = 'none';
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		  document.getElementById('settings-notloggedin').style.display = 'none';
+		  document.getElementById('ano-rfr-btn').addEventListener("click", async function() {
+		    document.getElementById('ano-rfr-btn').disabled = true;
+			document.getElementById('ano-rfr-btn').classList.remove('nav-active');
+			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+			  try {
+			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
+				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+				const deviceId = `dev_${Math.random()}`;
+				const referralCode = username;
+				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+                  method: 'POST', 
+                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+                }).then(x=>x.json());
+				if (!res.success) throw new Error(res.error ?? 'Unknown error');
+				account = { 
+                  username: res.username, 
+                  sessionToken: res.sessionToken, 
+                  avt: res.avt, 
+                  role: res.role,
+                  email: res.email || "",
+                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+                  frame: res.frame || null,
+                  chatFrame: res.chatFrame || res.chat_frame || "",
+                  banner: res.banner || ""
+                };
+				localStorage.setItem('danv_user_ano', JSON.stringify(account));
+				localStorage.setItem('pw_ano', pw);
+				location.reload();
+			  } catch (e) {alert(e)}
+			  hcaptcha.reset("hcaptchaShit2");
+			} else alert("Verify you are not a robot first!");
+			document.getElementById('ano-rfr-btn').disabled = false;
+			document.getElementById('ano-rfr-btn').classList.add('nav-active');
+		  });
 		  document.getElementById('ano-dis-btn').addEventListener("click", async function() {
 		    localStorage.removeItem("danv_user_ano");
+		    localStorage.removeItem("pw_ano");
 		    location.reload();
 		  });
 		  document.getElementById('upl-btn').classList.add('nav-active');
@@ -187,19 +281,21 @@
 			document.getElementById('upl-btn').classList.remove('nav-active');
 			document.getElementById('upl-btn').disabled = true;
             try {
-              let fileInput = document.getElementById('upload-file').files[0];
-              if (!fileInput) {
+              let fileInputO = document.getElementById('upload-file').files[0];
+              if (!fileInputO) {
 			    alert("Choose a file first!");
 			  } else {
 			    document.getElementById('upl-stat').textContent = `Compressing file...`;
                 const zip = new JSZip();
-                zip.file("project.json", fileInput);
-                fileInput = await zip.generateAsync({
+                zip.file("project.json", fileInputO);
+                let fileInput = await zip.generateAsync({
                   type: "blob",
                   compression: "DEFLATE",
-                  compressionOptions: {level: 4}
+                  compressionOptions: {level: fs.cfg.compressionLvl}
                 });
-                await uploadParts(fileInput);
+                const ret = await uploadParts(fileInput);
+				addEntry(fileInputO.name,['f',ret.join(',')]);
+				renderFileStuff(destDir());
 			    alert("Upload succeeded!");
 			  }
             } catch (e) {alert(`Failed to upload: ${e}`)}
@@ -208,8 +304,30 @@
 			document.getElementById('upl-btn').classList.add('nav-active');
 			document.getElementById('upl-btn').disabled = false;
           });
+		  document.getElementById('ano-pri-btn').addEventListener("click", async function() {
+		    localStorage.setItem('danv_user', localStorage.getItem('danv_user_ano'));
+			alert(`The password for your account: ${localStorage.getItem('pw_ano')}`);
+			localStorage.removeItem('danv_user_ano');
+			localStorage.removeItem('pw_ano');
+		    location.reload();
+		  });
+		  updFsMap = async function() {
+			document.getElementById('upl-stat').textContent = `Updating FS...`;
+			const zip = new JSZip();
+			let thing = new Blob([JSON.stringify(fs)], {type: 'application/json'});
+			zip.file("project.json", thing);
+			thing = await zip.generateAsync({
+			  type: "blob",
+			  compression: "DEFLATE",
+			  compressionOptions: {level: fs.cfg.compressionLvl}
+			});
+			const ret = await uploadParts(thing, 'FS');
+			localStorage.setItem('fs_', ret.join(','));
+		  }
 		} else {
+		  document.getElementById('ano-rfr-btn').style.display = 'none';
 		  document.getElementById('ano-dis-btn').style.display = 'none';
+		  document.getElementById('ano-pri-btn').style.display = 'none';
 		  document.getElementById('ano-ena-btn').addEventListener("click", async function() {
 		    document.getElementById('ano-ena-btn').disabled = true;
 			document.getElementById('ano-ena-btn').classList.remove('nav-active');
@@ -221,7 +339,7 @@
 				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
-				const referralCode = '';
+				const referralCode = username;
 				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
@@ -241,12 +359,72 @@
                   banner: res.banner || ""
                 };
 				localStorage.setItem('danv_user_ano', JSON.stringify(account));
+				localStorage.setItem('pw_ano', pw);
 				location.reload();
 			  } catch (e) {alert(e)}
 			  hcaptcha.reset("hcaptchaShit2");
 			} else alert("Verify you are not a robot first!");
 			document.getElementById('ano-ena-btn').disabled = false;
 			document.getElementById('ano-ena-btn').classList.add('nav-active');
+		  });
+		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
+		}
+		const destDir = () => dirStack.reduce((obj, key) => obj?.[1]?.[key], fs.fmap);
+		async function getFsMap() {
+		  try {
+		    if(!localStorage.getItem('fs_'))throw new Error('');
+			fs = await fetchRetry(`https://turboshare.org.uk/api/project/${localStorage.getItem('fs_')}`, {
+              headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }
+            }).then(x=>x.arrayBuffer()).then(x=>JSZip.loadAsync(x)).then(x=>x.file('project.json')).then(x=>x.async('string')).then(x=>JSON.parse(x));
+		  } catch (e) {}
+		}
+		!async function(){
+		  await getFsMap();
+		  renderFileStuff(fs.fmap);
+		}();
+		async function addEntry(name, dat) {
+		  const dd = destDir()[1];
+		  let n = 2;
+		  let pf = '';
+		  for(;dd[`${name}${pf}`];)pf=` (${n++})`;
+		  dd[`${name}${pf}`] = dat;
+		  await updFsMap();
+		  return `${name}${pf}`;
+		}
+		function chdir(path) {
+		  chf = '';
+		  if (path === '..') dirStack.pop();
+		  else dirStack.push(path);
+		  document.getElementById('lbl-path').textContent = `Path: /${dirStack.join('/')}${dirStack.length ? '/' : ''}`;
+		  renderFileStuff(destDir());
+		}
+		function fileOptions(name) {
+		  chf = name;
+		  document.getElementById('lbl-path').textContent = `Path: /${dirStack.join('/')}${dirStack.length ? '/' : ''} Selected file: ${name}`;
+		}
+		function renderFileStuff(m) {
+		  document.getElementById("files-list").replaceChildren();
+	      const entries = Object.keys(m[1]);
+		  {
+		    const element = document.createElement('p');
+			element.classList.add('txt');
+			element.classList.add('file-list-inner');
+			element.textContent = '../';
+			element.onclick = ()=>chdir('..');
+			document.getElementById("files-list").appendChild(element);
+		  }
+		  entries.forEach((entry)=>{
+		    const element = document.createElement('p');
+			element.classList.add('txt');
+			element.classList.add('file-list-inner');
+			if (m[1][entry][0] === 'd') { 
+			  element.textContent = `${entry}/`;
+			  element.onclick = ()=>chdir(entry);
+			} else {
+			  element.textContent = entry;
+			  element.onclick = ()=>fileOptions(entry);
+			}
+			document.getElementById("files-list").appendChild(element);
 		  });
 		}
       }();
@@ -355,7 +533,8 @@
       }
 	  .upload-div {
 	    height: 50px;
-	    width: 100%;
+		background-color: #555555;
+		border-radius: 10px;
         display: flex;
 		align-items: center;
         justify-content: center;
@@ -395,6 +574,26 @@
 		align-items: center;
         justify-content: center;
 	  }
+	  #files-list {
+	    padding: 10px;
+		border-radius: 10px;
+		min-height: 200px;
+	    max-height: 400px;
+		min-width: 200px;
+		max-width: 100%;
+	    background-color: #555555;
+	    display: flex;
+		flex-direction: column;
+		justify-content: center;
+	  }
+	  .file-list-inner {
+	    cursor: pointer;
+		color: #ffffff;
+		transition: all 0.3s ease
+	  }
+	  .file-list-inner:hover {
+	    color: #999999;
+	  }
     </style>
   </head>
   <body>
@@ -412,8 +611,8 @@
       </header>
       <div class="main-app-inner" id="app-main-div" style="display:none;">
 	    <div id="nav-home">
-		  <div id="verify-shit">
-		    <div class="h-captcha" id="hcaptchaShit" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="display:flex;justify-content:center;"></div>
+		  <div id="verify-shit" style="display: none;">
+		    <div class="h-captcha" id="hcaptchaShit" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="display:flex;justify-content:center;"><div id="hahaShit"></div></div>
 			<button class="nav-btn nav-active" onclick="document.querySelector('#hcaptchaShit [name=\'h-captcha-response\']').value='shit';">Skip</button>
 		  </div>
 		  <div id="home-things">
@@ -424,10 +623,13 @@
 		  <div id="nav-storage-inner">
 		    <p class="txt" id="lbl-amr">Anomymous mode is required for write access!</p>
 		    <div class="upload-div">
-		      <input type="file" id="upload-file" name="upload-file" maxfiles="1" disabled>
+		      <input type="file" id="upload-file" name="upload-file" disabled style="margin-left: 20px;">
 	  	      <button class="nav-btn" id="upl-btn" disabled>Upload</button>
 		      <p class="txt" id="upl-stat"></p>
 		    </div>
+			<p class="txt" id="lbl-path">Path: /</p>
+			<div class="txt" id="files-list">Loading...</div>
+			<div class="txt ano-only" id="dir-options"></div>
 		  </div>
 		</div>
 		<div id="nav-settings">
@@ -438,10 +640,13 @@
 		  </div>
 		  <div id="settings-notloggedin">
 			<button class="nav-btn nav-active" id="login-btn">Log in</button>
+			<button class="nav-btn nav-active" id="signup-btn">Sign up</button>
 		  </div>
 		  <div id="settings-ano">
 		    <button class="nav-btn nav-active" id="ano-ena-btn">Enable anonymous mode</button>
+			<button class="nav-btn nav-active" id="ano-rfr-btn">New anonymous account</button>
 		    <button class="nav-btn nav-active" id="ano-dis-btn">Disable anonymous mode</button>
+		    <button class="nav-btn nav-active" id="ano-pri-btn">Convert to primary account</button>
 		  </div>
 		</div>
       </div>

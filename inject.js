@@ -10,6 +10,7 @@
     return;
   }
   try {
+	sessionStorage.removeItem("danv_banned_info"); // fix dumb caching
     window.postMessage({
       type: 'sebu',
       payload: simele
