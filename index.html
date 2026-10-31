@@ -10,9 +10,9 @@
       !async function() {
 	    async function ebl(u){
 		  const x = document.createElement('script');
-		  hcaptcha.async = true;
-		  hcaptcha.defer = true;
-		  hcaptcha.textContent = await fetch(u).then(x=>x.text());
+		  x.async = true;
+		  x.defer = true;
+		  x.textContent = await fetch(u).then(x=>x.text());
 		  document.head.appendChild(x);
 		}
 		ebl("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
