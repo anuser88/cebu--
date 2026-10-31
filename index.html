@@ -8,13 +8,14 @@
 	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
-	    !async function(){
-		  const hcaptcha = document.createElement('script');
+	    async function ebl(u){
+		  const x = document.createElement('script');
 		  hcaptcha.async = true;
 		  hcaptcha.defer = true;
-		  hcaptcha.textContent = await fetch("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off").then(x=>x.text());
-		  document.head.appendChild(hcaptcha);
-		}();
+		  hcaptcha.textContent = await fetch(u).then(x=>x.text());
+		  document.head.appendChild(x);
+		}
+		ebl("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
 		let ano = 0;
@@ -432,6 +433,7 @@
     <style>
       * {
         box-sizing: border-box;
+		transition: all 0.67 ease;
       }
       html, body {
         margin: 0px;
