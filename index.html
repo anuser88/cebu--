@@ -8,14 +8,13 @@
 	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
-	    async function ebl(u){
-		  const x = document.createElement('script');
-		  x.async = true;
-		  x.defer = true;
-		  x.textContent = await fetch(u).then(x=>x.text());
-		  document.head.appendChild(x);
-		}
-		ebl("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
+	    !async function(){
+		  const hcaptcha = document.createElement('script');
+		  hcaptcha.async = true;
+		  hcaptcha.defer = true;
+		  hcaptcha.textContent = await fetch("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off").then(x=>x.text());
+		  document.head.appendChild(hcaptcha);
+		}();
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
 		let ano = 0;
@@ -256,7 +255,6 @@
 			}
 			await Promise.all(wk);
 			document.getElementById('upl-stat').textContent = "";
-			console.log(uploadedIds);
 			return uploadedIds;
 		  }
 		  async function uploadPartsInner(iv, ui, wh, fi, tc, cs) {
@@ -275,7 +273,6 @@
 			  }
 			  ui[i] = res.file_id;
 			}
-			console.log(i);
 		  }
           document.getElementById('upl-btn').addEventListener("click", async function() {
 			document.getElementById('upload-file').disabled = true;
@@ -382,8 +379,10 @@
 		!async function(){
 		  await getFsMap();
 		  renderFileStuff(fs.fmap);
+		  refreshActions();
 		}();
 		async function addEntry(name, dat) {
+		  if (!name) return;
 		  const dd = destDir()[1];
 		  let n = 2;
 		  let pf = '';
@@ -392,16 +391,46 @@
 		  await updFsMap();
 		  return `${name}${pf}`;
 		}
+		async function renameEntry(n1, n2) {
+		  if (n1 === n2 || !n2) return;
+		  const dd = destDir()[1];
+		  let n = 2;
+		  let pf = '';
+		  for(;dd[`${n2}${pf}`];)pf=` (${n++})`;
+		  dd[n2+pf] = dd[n1];
+		  delete dd[n1];
+		  await updFsMap();
+		}
+		async function deleteEntry(name) {
+		  if (!name) return;
+		  const dd = destDir()[1];
+		  delete dd[name];
+		  await updFsMap();
+		}
+		async function downloadFile(name) {
+		  if (!name) return;
+		  const df = destDir()[1][name][1];
+		  document.getElementById('upl-stat').textContent = 'Fetching and decompressing file...';
+		  const b = await fetchRetry(`https://turboshare.org.uk/api/project/${df}`,{
+            headers:{"Content-Type":"application/json","X-Client-Type":"StudioDANV-Web"}
+          }).then(x=>x.arrayBuffer()).then(x=>JSZip.loadAsync(x)).then(x=>x.file('project.json')).then(x=>x.async('blob'));
+		  const a=document.createElement("a");const o=URL.createObjectURL(b);a.href=o;a.download=name;a.click();
+		  setTimeout(()=>URL.revokeObjectURL(o),60000);
+		  alert("Download started!");
+		  document.getElementById('upl-stat').textContent = '';
+		}
 		function chdir(path) {
 		  chf = '';
 		  if (path === '..') dirStack.pop();
 		  else dirStack.push(path);
 		  document.getElementById('lbl-path').textContent = `Path: /${dirStack.join('/')}${dirStack.length ? '/' : ''}`;
 		  renderFileStuff(destDir());
+		  refreshActions();
 		}
 		function fileOptions(name) {
 		  chf = name;
 		  document.getElementById('lbl-path').textContent = `Path: /${dirStack.join('/')}${dirStack.length ? '/' : ''} Selected file: ${name}`;
+		  refreshActions();
 		}
 		function renderFileStuff(m) {
 		  document.getElementById("files-list").replaceChildren();
@@ -427,6 +456,30 @@
 			}
 			document.getElementById("files-list").appendChild(element);
 		  });
+		}
+		function refreshActions() {
+		  const parent = document.getElementById("actions-list");
+		  parent.replaceChildren();
+		  function appendd(a, b) {
+		    const element = document.createElement('div');
+			element.classList.add('actions-list-inner');
+			element.textContent = a;
+			element.onclick = b;
+			parent.appendChild(element);
+		  }
+		  appendd("reset",()=>{if(confirm('This will delete all files in your storage! Continue?')){localStorage.removeItem('fs_');location.reload();}});
+		  if (ano) {
+		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
+			if (dirStack.length) {
+		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));renderFileStuff(destDir());});
+		      appendd("delete folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');deleteEntry(y);renderFileStuff(destDir());});
+			}
+			if (chf) {
+		      appendd("rename file",()=>{renameEntry(chf,prompt("New name:"));renderFileStuff(destDir());});
+		      appendd("delete file",()=>{deleteEntry(chf);renderFileStuff(destDir());});
+		    }
+		  }
+		  if (chf) appendd("download file",()=>{downloadFile(chf)});
 		}
       }();
     </script>
@@ -596,6 +649,29 @@
 	  .file-list-inner:hover {
 	    color: #999999;
 	  }
+	  #actions-list {
+	    padding: 10px;
+		border-radius: 10px;
+		min-width: 500px;
+		max-width: 100%;
+	    background-color: #555555;
+	    display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 5px;
+	  }
+	  .actions-list-inner {
+	    border-radius: 5px;
+		padding: 4px;
+	    cursor: pointer;
+		background-color: #777777;
+		color: #ffffff;
+		transition: all 0.3s ease
+	  }
+	  .actions-list-inner:hover {
+	    color: #999999;
+	  }
     </style>
   </head>
   <body>
@@ -632,6 +708,7 @@
 			<p class="txt" id="lbl-path">Path: /</p>
 			<div class="txt" id="files-list">Loading...</div>
 			<div class="txt ano-only" id="dir-options"></div>
+			<p class="txt">Actions: </p><div class="txt" id="actions-list">Loading...</div>
 		  </div>
 		</div>
 		<div id="nav-settings">
