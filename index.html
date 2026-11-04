@@ -467,7 +467,9 @@
 			element.onclick = b;
 			parent.appendChild(element);
 		  }
-		  appendd("reset",()=>{if(confirm('This will delete all files in your storage! Continue?')){localStorage.removeItem('fs_');location.reload();}});
+		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');location.reload();}});
+		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);location.reload();}});
+		  appendd("export",()=>{navigator.clipboard.writeText(localStorage.getItem('fs_'));alert("Copied the code to your clipboard!");});
 		  if (ano) {
 		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
 			if (dirStack.length) {
