@@ -473,12 +473,12 @@
 		  if (ano) {
 		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
 			if (dirStack.length) {
-		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));renderFileStuff(destDir());});
-		      appendd("delete folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');deleteEntry(y);renderFileStuff(destDir());});
+		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));chf='';renderFileStuff(destDir());});
+		      appendd("delete folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');deleteEntry(y);chf='';renderFileStuff(destDir());});
 			}
 			if (chf) {
-		      appendd("rename file",()=>{renameEntry(chf,prompt("New name:"));renderFileStuff(destDir());});
-		      appendd("delete file",()=>{deleteEntry(chf);renderFileStuff(destDir());});
+		      appendd("rename file",()=>{renameEntry(chf,prompt("New name:"));chf='';renderFileStuff(destDir());});
+		      appendd("delete file",()=>{deleteEntry(chf);chf='';renderFileStuff(destDir());});
 		    }
 		  }
 		  if (chf) appendd("download file",()=>{downloadFile(chf)});
