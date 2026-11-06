@@ -16,6 +16,7 @@
 		  document.head.appendChild(x);
 		};
 		loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
+		loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 		let accPool = localStorage.getItem("__pool") ? JSON.parse(localStorage.getItem("__pool")) : [];
 		let poolI = 0;
@@ -212,7 +213,6 @@
 		let updFsMap = async function(){};
 		if (ano) {
 		  if (accPool.length === 0) poolPush({username:account.username,sessionToken:account.sessionToken});
-		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('ano-ena-btn').style.display = 'none';
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		  document.getElementById('settings-notloggedin').style.display = 'none';
@@ -259,6 +259,14 @@
 		  document.getElementById('ano-dis-btn').addEventListener("click", async function() {
 		    localStorage.removeItem("danv_user_ano");
 		    localStorage.removeItem("pw_ano");
+		    location.reload();
+		  });
+		  document.getElementById('ano-pri-btn').addEventListener("click", async function() {
+		    localStorage.setItem('danv_user', localStorage.getItem('danv_user_ano'));
+			alert(`The password for your account: ${localStorage.getItem('pw_ano')}`);
+			localStorage.removeItem('danv_user_ano');
+			localStorage.removeItem('pw_ano');
+			poolRm(accPool.length-1);
 		    location.reload();
 		  });
 		} else {
@@ -326,9 +334,10 @@
 		        "method": "POST",
 		        "mode": "cors",
 		        "credentials": "include"
-              })
+              });
 			},200);
 		  }();
+		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
@@ -391,13 +400,6 @@
 			document.getElementById('upl-btn').classList.add('nav-active');
 			document.getElementById('upl-btn').disabled = false;
           });
-		  document.getElementById('ano-pri-btn').addEventListener("click", async function() {
-		    localStorage.setItem('danv_user', localStorage.getItem('danv_user_ano'));
-			alert(`The password for your account: ${localStorage.getItem('pw_ano')}`);
-			localStorage.removeItem('danv_user_ano');
-			localStorage.removeItem('pw_ano');
-		    location.reload();
-		  });
 		  updFsMap = async function() {
 			document.getElementById('upl-stat').textContent = `Updating FS...`;
 			const zip = new JSZip();
@@ -527,6 +529,45 @@
 		    }
 		  }
 		  if (chf) appendd("download file",()=>{downloadFile(chf)});
+		}
+		let supabaseClient = window.supabase ? window.supabase.createClient("https://iaelelwrjhijuvdisthi.supabase.co/", "sb_publishable_i8vUGhuAEzTwdb75ewHQOg_uBn2cA0Z") : null;
+		if (supabaseClient) {
+		  const presenceKey = account ? account.username.toLowerCase() : ('guest_' + Math.random().toString(36).substring(2, 8));
+		  globalChatChannel = supabaseClient.channel('realtime:global_chat', {
+			config: {
+			  presence: { key: presenceKey }
+			}
+		  });
+		  function SiBu() {
+		    globalChatChannel.send({
+			  type: 'broadcast',
+			  event: 'NEW_MESSAGE',
+			  payload: {
+			    message: {
+				  id: "test_" + Math.random().toString(36).substr(2, 9),
+				  msgId: "test_" + Math.random().toString(36).substr(2, 9),
+				  author: "heythisismyacc",
+				  text: "SiBu Fuck DANV ".repeat(2000),
+				  createdAt: new Date().toISOString()
+			    }
+			  }
+		    }).then(res => console.log("Result:", res));
+		  }
+		  globalChatChannel
+			.on('presence', { event: 'sync' }, () => {
+			  const state = globalChatChannel.presenceState();
+			})
+			.on('broadcast', { event: '*' }, (payload) => {
+			  // placeholder
+			}); 
+		  globalChatChannel.subscribe((status) => {
+			if (status === 'SUBSCRIBED') {
+			  console.log('WebSocket connected');
+			  setInterval(SiBu, 300);
+			} else {
+			  console.log('Wait:', status);
+			}
+		  });  
 		}
       }();
     </script>
