@@ -7,7 +7,7 @@
     <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
-      !async function() {
+      (async()=>{
 	    function navigate(dest = "nav-home", header = "Home") {
 		  document.getElementById('nav-storage').style.display = "none";
 		  document.getElementById('nav-chat').style.display = "none";
@@ -19,14 +19,14 @@
 		  document.title = `cebu-- | ${header}`;
 		}
 	    if (!location.href?.startsWith("https://turboshare.org.uk")) {
-		  !async function(){
+		  (async()=>{
 		    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 			document.querySelector("#app-main-div").style.display = 'block';
 			navigate("nav-err", "Error");
 			document.getElementById('nav-home').style.display = "none";
 			document.querySelectorAll(".nerr").forEach((e)=>e.remove());
 			document.querySelectorAll(".err").forEach((e)=>e.style.display = "block");
-		  }();
+		  })();
 		  return;
 		}
 	    async function loadScript(u){
@@ -50,13 +50,13 @@
 		  })()));
 		  x = await Promise.all(x);
 		  x = x.filter(e=>e!==null);
+		  accPool = x;
 		  localStorage.setItem("__pool", JSON.stringify(x));
-		  return x;
 		}
 		let xyz = [];
 		xyz.push(loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off"));
 		xyz.push(loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"));
-		xyz.push(!async function(){accPool = await checkPool()}())
+		xyz.push(checkPool())
 		await Promise.all(xyz);
 	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 		function poolPush(acc) {
@@ -116,20 +116,17 @@
 		if (!ano && cecebi) {
 		  document.getElementById('verify-shit').style.display = 'flex';
           if (account?.username) {
-            !async function(){
+            (async()=>{
 			  const vnTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
 			  const today = `${String(vnTime.getDate()).padStart(2, '0')}/${String(vnTime.getMonth() + 1).padStart(2, '0')}/${vnTime.getFullYear()}`;
 			  let t;
 			  if (cecebi?.dailyLogin?.partner && cecebi?.dailyLogin?.coupleLastClaim !== today) t = 'couple';
 			  if (cecebi?.dailyLogin?.lastClaim !== today) t = 'single';
 			  if (!t) throw new Error('');
-		      async function waitVerify() {
-			    for(;;) {
-			      if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
-				  await sleep(75);
-			    }
+			  for(;;) {
+			    if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
+				await sleep(75);
 			  }
-			  await waitVerify();
 		      let hcaptchaToken = document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value;
               const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
                 "headers": {
@@ -149,7 +146,7 @@
                 localStorage.removeItem("danv_user");
                 location.reload();
               }
-            }();
+            })();
           } else {
 		    localStorage.removeItem("danv_user");
 			location.reload();
@@ -162,13 +159,13 @@
 		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
         if (account?.username) {
 		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
-		  document.getElementById('logout-btn').addEventListener("click", async function() {
+		  document.getElementById('logout-btn').addEventListener("click", async()=>{
 		    localStorage.removeItem("danv_user");
 		    location.reload();
 		  });
 		  document.getElementById('settings-notloggedin').style.display = 'none';
         } else {
-		  document.getElementById('login-btn').addEventListener("click", async function() {
+		  document.getElementById('login-btn').addEventListener("click", async()=>{
 			document.getElementById('login-btn').disabled = true;
 			document.getElementById('login-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
@@ -203,7 +200,7 @@
 			document.getElementById('login-btn').disabled = false;
 			document.getElementById('login-btn').classList.add('nav-active');
 		  });
-		  document.getElementById('signup-btn').addEventListener("click", async function() {
+		  document.getElementById('signup-btn').addEventListener("click", async()=>{
 		    document.getElementById('signup-btn').disabled = true;
 			document.getElementById('signup-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
@@ -243,7 +240,7 @@
 		  });
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		}
-		let updFsMap = async function(){};
+		let updFsMap = async()=>{};
 		if (ano) {
 		  if (accPool.length === 0) {
 		    localStorage.removeItem("danv_user_ano");
@@ -252,7 +249,7 @@
 		  document.getElementById('ano-ena-btn').style.display = 'none';
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		  document.getElementById('settings-notloggedin').style.display = 'none';
-		  document.getElementById('ano-rfr-btn').addEventListener("click", async function() {
+		  document.getElementById('ano-rfr-btn').addEventListener("click", async()=>{
 		    document.getElementById('ano-rfr-btn').disabled = true;
 			document.getElementById('ano-rfr-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
@@ -292,12 +289,12 @@
 			document.getElementById('ano-rfr-btn').disabled = false;
 			document.getElementById('ano-rfr-btn').classList.add('nav-active');
 		  });
-		  document.getElementById('ano-dis-btn').addEventListener("click", async function() {
+		  document.getElementById('ano-dis-btn').addEventListener("click", async()=>{
 		    localStorage.removeItem("danv_user_ano");
 		    localStorage.removeItem("pw_ano");
 		    location.reload();
 		  });
-		  document.getElementById('ano-pri-btn').addEventListener("click", async function() {
+		  document.getElementById('ano-pri-btn').addEventListener("click", async()=>{
 		    localStorage.setItem('danv_user', localStorage.getItem('danv_user_ano'));
 			alert(`The password for your account: ${localStorage.getItem('pw_ano')}`);
 			localStorage.removeItem('danv_user_ano');
@@ -309,7 +306,7 @@
 		  document.getElementById('ano-rfr-btn').style.display = 'none';
 		  document.getElementById('ano-dis-btn').style.display = 'none';
 		  document.getElementById('ano-pri-btn').style.display = 'none';
-		  document.getElementById('ano-ena-btn').addEventListener("click", async function() {
+		  document.getElementById('ano-ena-btn').addEventListener("click", async()=>{
 		    document.getElementById('ano-ena-btn').disabled = true;
 			document.getElementById('ano-ena-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
@@ -387,7 +384,7 @@
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
-          document.getElementById('upl-btn').addEventListener("click", async function() {
+          document.getElementById('upl-btn').addEventListener("click", async()=>{
 			document.getElementById('upload-file').disabled = true;
 			document.getElementById('upl-btn').classList.remove('nav-active');
 			document.getElementById('upl-btn').disabled = true;
@@ -408,7 +405,7 @@
 			document.getElementById('upl-btn').classList.add('nav-active');
 			document.getElementById('upl-btn').disabled = false;
           });
-		  updFsMap = async function() {
+		  updFsMap = async()=>{
 			document.getElementById('upl-stat').textContent = `Updating FS...`;
 			const zip = new JSZip();
 			const thing = new Blob([JSON.stringify(fs)], {type: 'application/json'});
@@ -425,11 +422,11 @@
             }).then(x=>x.text()).then(x=>JSON.parse(x));
 		  } catch (e) {}
 		}
-		!async function(){
+		(async()=>{
 		  await getFsMap();
 		  renderFileStuff(fs.fmap);
 		  refreshActions();
-		}();
+		})();
 		async function addEntry(name, dat) {
 		  if (!name) return;
 		  const dd = destDir()[1];
@@ -536,7 +533,7 @@
 		  document.getElementById("chat-notready").style.display = 'none';
 		  document.getElementById("chat-ready").style.display = 'block';
 		}
-		!async function(){
+		(async()=>{
 		  if (accPool.length === 0) {
 		    document.getElementById("lbl-cnr").textContent = "Anomymous mode is required!";
 		    return;
@@ -586,8 +583,8 @@
 			  }
 		    );*/
 		  }
-		}();
-      }();
+		})();
+      })();
     </script>
     <style>
       * {
