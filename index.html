@@ -4,10 +4,31 @@
     <title>
       cebu--
     </title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-	<!--<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>-->
     <script>
       !async function() {
+	    function navigate(dest = "nav-home", header = "Home") {
+		  document.getElementById('nav-storage').style.display = "none";
+		  document.getElementById('nav-chat').style.display = "none";
+		  document.getElementById('nav-home').style.display = "none";
+		  document.getElementById('nav-settings').style.display = "none";
+		  document.getElementById('nav-err').style.display = "none";
+		  document.getElementById(dest).style.display = "block";
+		  document.getElementById('app-header').textContent = header;
+		  document.title = `cebu-- | ${header}`;
+		}
+	    if (!location.href?.startsWith("https://turboshare.org.uk")) {
+		  !async function(){
+		    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
+			document.querySelector("#app-main-div").style.display = 'block';
+			navigate("nav-err", "Error");
+			document.getElementById('nav-home').style.display = "none";
+			document.querySelectorAll(".nerr").forEach((e)=>e.remove());
+			document.querySelectorAll(".err").forEach((e)=>e.style.display = "block");
+		  }();
+		  return;
+		}
 	    async function loadScript(u){
 		  const x = document.createElement('script');
 		  x.async = true;
@@ -15,17 +36,36 @@
 		  x.textContent = await fetch(u).then(n=>n.text());
 		  document.head.appendChild(x);
 		};
-		loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off");
-		loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 		let accPool = localStorage.getItem("__pool") ? JSON.parse(localStorage.getItem("__pool")) : [];
 		let poolI = 0;
+		async function checkPool() {
+		  let x = [];
+		  async function checkPoolInner(sAcc){
+		    const chunkForm = new FormData();
+		    chunkForm.append("username", sAcc.username);
+		    chunkForm.append("sessionToken", sAcc.sessionToken);
+		    const y = await fetch("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json()).then(x.error);
+			if (y === "Access Denied: Authentication error!") return null;
+			else return sAcc;
+		  }
+		  accPool.forEach(sAcc=>x.push(checkPoolInner(sAcc)));
+		  x = await Promise.all(x);
+		  x = x.filter(e=>e!==null);
+		  localStorage.setItem("__pool", JSON.stringify(x));
+		  return x;
+		}
+		let xyz = [];
+		xyz.push(loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off"));
+		xyz.push(loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"));
+		xyz.push(!async function(){accPool = await checkPool()}())
+		await Promise.all(xyz);
+	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 		function poolPush(acc) {
 		  accPool.push(acc);
 		  localStorage.setItem("__pool",JSON.stringify(accPool));
 		}
-		function poolRm(i) {
-		  accPool = accPool.splice(i, 1);
+		function poolPop() {
+		  accPool.pop();
 		  poolI = 0;
 		  localStorage.setItem("__pool",JSON.stringify(accPool));
 		}
@@ -46,6 +86,7 @@
 		    compressionLvl: 4
 		  }
 		};
+		let chat = {};
 		let dirStack = [];
 		let chf = '';
 		var sksh = 0;
@@ -69,14 +110,6 @@
             await sleep(500);
           }
         }
-		function navigate(dest = "nav-home", header = "Home") {
-		  document.getElementById('nav-storage').style.display = "none";
-		  document.getElementById('nav-home').style.display = "none";
-		  document.getElementById('nav-settings').style.display = "none";
-		  document.getElementById(dest).style.display = "block";
-		  document.getElementById('app-header').textContent = header;
-		  document.title = `cebu-- | ${header}`;
-		}
 		let cecebi;
 		try {
 		  cecebi = await fetch(`https://turboshare.org.uk/api/user/${account.username}?_t=${Date.now()}`).then(x=>x.json());
@@ -84,7 +117,7 @@
 		if (!ano && cecebi) {
 		  document.getElementById('verify-shit').style.display = 'flex';
           if (account?.username) {
-            try {
+            !async function(){
 			  const vnTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
 			  const today = `${String(vnTime.getDate()).padStart(2, '0')}/${String(vnTime.getMonth() + 1).padStart(2, '0')}/${vnTime.getFullYear()}`;
 			  let t;
@@ -117,7 +150,7 @@
                 localStorage.removeItem("danv_user");
                 location.reload();
               }
-            } catch (e) {}
+            }();
           } else {
 		    localStorage.removeItem("danv_user");
 			location.reload();
@@ -126,6 +159,7 @@
 		document.getElementById('verify-shit').remove();
 		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
 		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
+		document.getElementById('chat-btn').addEventListener('click', ()=>navigate("nav-chat", "Chat"));
 		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
         if (account?.username) {
 		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
@@ -212,7 +246,10 @@
 		}
 		let updFsMap = async function(){};
 		if (ano) {
-		  if (accPool.length === 0) poolPush({username:account.username,sessionToken:account.sessionToken});
+		  if (accPool.length === 0) {
+		    localStorage.removeItem("danv_user_ano");
+			location.reload();
+		  };
 		  document.getElementById('ano-ena-btn').style.display = 'none';
 		  document.getElementById('settings-loggedin').style.display = 'none';
 		  document.getElementById('settings-notloggedin').style.display = 'none';
@@ -266,7 +303,7 @@
 			alert(`The password for your account: ${localStorage.getItem('pw_ano')}`);
 			localStorage.removeItem('danv_user_ano');
 			localStorage.removeItem('pw_ano');
-			poolRm(accPool.length-1);
+			poolPop();
 		    location.reload();
 		  });
 		} else {
@@ -315,42 +352,42 @@
 		  });
 		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
 		}
+		async function uploadParts(fileInput, what = "file") {
+		  const CHUNK_SIZE = 20 * 1024 * 1024;
+		  const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
+	      let iv = Array.from({length: totalChunks}, (a, b) => b + 1);
+		  let uploadedIds = Array(totalChunks).fill();
+		  let wk = [];
+		  for (let i = 0; i < Math.min(totalChunks, 4); i++) {
+			wk.push(uploadPartsInner(iv, uploadedIds, what, fileInput, totalChunks, CHUNK_SIZE));
+		  }
+		  await Promise.all(wk);
+		  document.getElementById('upl-stat').textContent = "";
+		  return uploadedIds;
+		}
+		async function uploadPartsInner(iv, ui, wh, fi, tc, cs) {
+		  let i;
+		  while (i = iv.shift()) {
+			i--;
+			document.getElementById('upl-stat').textContent = `Uploading ${wh}(fragment ${i+1}/${tc})`;
+		    const chunk = fi.slice(i * cs, (i + 1) * cs);
+			const chunkForm = new FormData();
+			const sAcc = poolGet();
+			chunkForm.append("file", chunk, "part_0.png");
+			chunkForm.append("username", sAcc.username);
+			chunkForm.append("sessionToken", sAcc.sessionToken);
+			const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
+			if (!res || !res.success || !res.file_id) {
+			  throw new Error(res?.error || "Upload failed!");
+			}
+			ui[i] = res.file_id;
+	      }
+		}
 		if (accPool.length > 0) {
 		  document.getElementById('lbl-amr').style.display = 'none';
 		  document.getElementById('upl-btn').classList.add('nav-active');
 		  document.getElementById('upl-btn').disabled = false;
 		  document.getElementById('upload-file').disabled = false;
-		  async function uploadParts(fileInput, what = "file") {
-		    const CHUNK_SIZE = 36 * 1024 * 1024;
-		    const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
-			let iv = Array.from({length: totalChunks}, (a, b) => b + 1);
-			let uploadedIds = Array(totalChunks).fill();
-			let wk = [];
-			for (let i = 0; i < Math.min(totalChunks, 4); i++) {
-			  wk.push(uploadPartsInner(iv, uploadedIds, what, fileInput, totalChunks, CHUNK_SIZE));
-			}
-			await Promise.all(wk);
-			document.getElementById('upl-stat').textContent = "";
-			return uploadedIds;
-		  }
-		  async function uploadPartsInner(iv, ui, wh, fi, tc, cs) {
-		    let i;
-			while (i = iv.shift()) {
-			  i--;
-			  document.getElementById('upl-stat').textContent = `Uploading ${wh}(fragment ${i+1}/${tc})`;
-		      const chunk = fi.slice(i * cs, (i + 1) * cs);
-			  const chunkForm = new FormData();
-			  const sAcc = poolGet();
-			  chunkForm.append("file", chunk, `part_${i}.sb3`);
-			  chunkForm.append("username", sAcc.username);
-			  chunkForm.append("sessionToken", sAcc.sessionToken);
-			  const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
-			  if (!res || !res.success || !res.file_id) {
-			    throw new Error(res?.error || "Upload failed!");
-			  }
-			  ui[i] = res.file_id;
-			}
-		  }
           document.getElementById('upl-btn').addEventListener("click", async function() {
 			document.getElementById('upload-file').disabled = true;
 			document.getElementById('upl-btn').classList.remove('nav-active');
@@ -361,14 +398,7 @@
 			    alert("Choose a file first!");
 			  } else {
 			    document.getElementById('upl-stat').textContent = `Compressing file...`;
-                const zip = new JSZip();
-                zip.file("project.json", fileInputO);
-                let fileInput = await zip.generateAsync({
-                  type: "blob",
-                  compression: "DEFLATE",
-                  compressionOptions: {level: fs.cfg.compressionLvl}
-                });
-                const ret = await uploadParts(fileInput);
+                const ret = await uploadParts(fileInputO);
 				addEntry(fileInputO.name,['f',ret.join(',')]);
 				renderFileStuff(destDir());
 			    alert("Upload succeeded!");
@@ -382,13 +412,7 @@
 		  updFsMap = async function() {
 			document.getElementById('upl-stat').textContent = `Updating FS...`;
 			const zip = new JSZip();
-			let thing = new Blob([JSON.stringify(fs)], {type: 'application/json'});
-			zip.file("project.json", thing);
-			thing = await zip.generateAsync({
-			  type: "blob",
-			  compression: "DEFLATE",
-			  compressionOptions: {level: fs.cfg.compressionLvl}
-			});
+			const thing = new Blob([JSON.stringify(fs)], {type: 'application/json'});
 			const ret = await uploadParts(thing, 'FS');
 			localStorage.setItem('fs_', ret.join(','));
 		  }
@@ -399,7 +423,7 @@
 		    if(!localStorage.getItem('fs_'))throw new Error('');
 			fs = await fetchRetry(`https://turboshare.org.uk/api/project/${localStorage.getItem('fs_')}`, {
               headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }
-            }).then(x=>x.arrayBuffer()).then(x=>JSZip.loadAsync(x)).then(x=>x.file('project.json')).then(x=>x.async('string')).then(x=>JSON.parse(x));
+            }).then(x=>x.text()).then(x=>JSON.parse(x));
 		  } catch (e) {}
 		}
 		!async function(){
@@ -436,10 +460,10 @@
 		async function downloadFile(name) {
 		  if (!name) return;
 		  const df = destDir()[1][name][1];
-		  document.getElementById('upl-stat').textContent = 'Fetching and decompressing file...';
+		  document.getElementById('upl-stat').textContent = 'Fetching file...';
 		  const b = await fetchRetry(`https://turboshare.org.uk/api/project/${df}`,{
             headers:{"Content-Type":"application/json","X-Client-Type":"StudioDANV-Web"}
-          }).then(x=>x.arrayBuffer()).then(x=>JSZip.loadAsync(x)).then(x=>x.file('project.json')).then(x=>x.async('blob'));
+          }).then(x=>x.blob());
 		  const a=document.createElement("a");const o=URL.createObjectURL(b);a.href=o;a.download=name;a.click();
 		  setTimeout(()=>URL.revokeObjectURL(o),60000);
 		  alert("Download started!");
@@ -509,50 +533,61 @@
 		  }
 		  if (chf) appendd("download file",()=>{downloadFile(chf)});
 		}
-		let supabaseClient = window.supabase ? window.supabase.createClient("https://iaelelwrjhijuvdisthi.supabase.co/", "sb_publishable_i8vUGhuAEzTwdb75ewHQOg_uBn2cA0Z") : null;
-		if (supabaseClient) {
-		  const presenceKey = account ? account.username.toLowerCase() : ('guest_' + Math.random().toString(36).substring(2, 8));
-		  globalChatChannel = supabaseClient.channel('realtime:global_chat', {
-			config: {
-			  presence: { key: presenceKey }
-			}
-		  });
-		  function SiBu() {
-		    globalChatChannel.send({
-			  type: 'broadcast',
-			  event: 'NEW_MESSAGE',
-			  payload: {
-			    message: {
-				  id: "test_" + Math.random().toString(36).substr(2, 9),
-				  msgId: "test_" + Math.random().toString(36).substr(2, 9),
-				  author: "heythisismyacc",
-				  text: "SiBu Fuck DANV ".repeat(2000),
-				  createdAt: new Date().toISOString()
-			    }
-			  }
-		    }).then(res => console.log("Result:", res));
-		  }
-		  globalChatChannel
-			.on('presence', { event: 'sync' }, () => {
-			  const state = globalChatChannel.presenceState();
-			})
-			.on('broadcast', { event: '*' }, (payload) => {
-			  // placeholder
-			}); 
-		  globalChatChannel.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-			  console.log('WebSocket connected');
-			  if (localStorage.getItem("nuke") === 'enabled') setInterval(SiBu, 100);
-			} else {
-			  console.log('Wait:', status);
-			}
-		  });
+		function chatReady() {
+		  document.getElementById("chat-notready").style.display = 'none';
+		  document.getElementById("chat-ready").style.display = 'block';
 		}
-		document.getElementById("nuke").addEventListener("click", ()=>{
-		  if (localStorage.getItem("nuke") === 'enabled') localStorage.removeItem("nuke");
-		  else localStorage.setItem("nuke", "enabled");
-		  location.reload();
-		});
+		!async function(){
+		  if (accPool.length === 0) {
+		    document.getElementById("lbl-cnr").textContent = "Anomymous mode is required!";
+		    return;
+		  }
+		  const supabaseClient = window.supabase ? window.supabase.createClient("https://reyenqxvmqkicvxxdxaj.supabase.co", "sb_publishable_uzqzuDZQUAgsBlJuHMy0rQ_tUep24wt", {
+		    auth: {
+              persistSession: true,
+			  autoRefreshToken: true
+		    }
+		  }) : null;
+		  if (supabaseClient) {
+			//await supabaseClient.auth.signOut();
+		    const chatUser = await supabaseClient.auth.getUser();
+			if (chatUser.data.user === null) {
+			  document.getElementById("lbl-cnr").textContent = "A cebu-chat account is required!";
+			  document.getElementById("cnr-login-btn").style.display = "block";
+			  document.getElementById("cnr-signup-btn").style.display = "block";
+			  document.getElementById("cnr-login-btn").onclick = async()=>{
+			    document.getElementById("cnr-login-btn").disabled = true;
+			    document.getElementById("cnr-login-btn").classList.remove("nav-active");
+				const res = await supabaseClient.auth.signInWithPassword({
+				  email: prompt("Registered email:"),
+				  password :prompt("Password:")
+				});
+				if (res.error) alert(`Failed to sign in: ${res.error}`);
+				location.reload();
+			  };
+			  document.getElementById("cnr-signup-btn").onclick = async()=>{
+			    document.getElementById("cnr-signup-btn").disabled = true;
+			    document.getElementById("cnr-signup-btn").classList.remove("nav-active");
+				const res = await supabaseClient.auth.signUp({
+				  email: prompt("Email:"),
+				  password: prompt("Password:")
+				});
+				if (res.error) alert(`Failed to sign up: ${res.error}`);
+				else alert("We've sent you a verification link in your email inbox. Verify your email and sign in to your account.")
+				location.reload();
+			  };
+		      return;
+			}
+			chatReady();
+		    /*await supabaseClient.functions.invoke(
+			  `simimu-persi?mode=create`,
+			  {
+			    body: "",
+			    method: "POST"
+			  }
+		    );*/
+		  }
+		}();
       }();
     </script>
     <style>
@@ -567,11 +602,11 @@
       }
 	  a:link, a:visited {
 		text-decoration: none;
-		color: #888888;
+		color: #aaaaaa;
 	  }
 	  a:hover, a:active {
 		text-decoration: underline;
-		color: #bbbbbb;
+		color: #dddddd;
 	  }
       .navbar {
         border-radius: 0px 0px 20px 20px;
@@ -667,7 +702,7 @@
         justify-content: center;
 		gap: 10px;
 	  }
-	  #settings-loggedin, #settings-notloggedin, #settings-ano {
+	  #settings-loggedin, #settings-notloggedin, #settings-ano, #chat-notready {
 	    display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -749,10 +784,11 @@
   <body>
     <nav class="navbar">
       <ul class="nav-ul">
-        <li><button class="nav-btn nav-active" id="home-btn">Home</button></li>
-        <li><button class="nav-btn" disabled>Projects</button></li>
-        <li><button class="nav-btn nav-active" id="storage-btn">Storage</button></li>
-        <li><button class="nav-btn nav-active" id="settings-btn">Settings</button></li>
+        <li class="nerr"><button class="nav-btn nav-active" id="home-btn">Home</button></li>
+        <li class="nerr"><button class="nav-btn nav-active" id="chat-btn">Chat</button></li>
+        <li class="nerr"><button class="nav-btn nav-active" id="storage-btn">Storage</button></li>
+        <li class="nerr"><button class="nav-btn nav-active" id="settings-btn">Settings</button></li>
+		<li><button class="nav-btn err" style="display: none;">Error</button></li>
       </ul>
     </nav>
     <main class="main-app">
@@ -763,7 +799,7 @@
 	    <div id="nav-home">
 		  <div id="verify-shit" style="display: none;">
 		    <div class="h-captcha" id="hcaptchaShit" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="display:flex;justify-content:center;"><div id="hahaShit"></div></div>
-			<button class="nav-btn nav-active" onclick="document.querySelector('#hcaptchaShit [name=\'h-captcha-response\']').value='shit';">Skip</button>
+			<button class="nav-btn nav-active" onclick="document.querySelector('#hcaptchaShit [name=\'h-captcha-response\']').value='shit';">Skip daily</button>
 		  </div>
 		  <div id="home-things">
 		    <p class="txt">Home</p>
@@ -783,6 +819,16 @@
 			<p class="txt">Actions: </p><div class="txt" id="actions-list">Loading...</div>
 		  </div>
 		</div>
+		<div id="nav-chat">
+		  <div id="chat-notready">
+		    <p class="txt" id="lbl-cnr" style="display: flex; justify-content: center;">Loading...</p>
+			<button class="nav-btn nav-active" id="cnr-login-btn" style="display: none;">Sign in</button>
+			<button class="nav-btn nav-active" id="cnr-signup-btn" style="display: none;">Sign up</button>
+		  </div>
+		  <div id="chat-ready" style="display: none;">
+		    <p class="txt" id="lbl-cnr" style="display: flex; justify-content: center;">Placeholder</p>
+		  </div>
+		</div>
 		<div id="nav-settings">
 		  <div class="h-captcha" id="hcaptchaShit2" data-sitekey="92420ffc-6b14-4126-a31e-2e707ebc7492" data-theme="auto" style="margin-bottom: 12px; display: flex; justify-content: center;"></div>
 		  <div id="settings-loggedin">
@@ -795,11 +841,19 @@
 		  </div>
 		  <div id="settings-ano">
 		    <button class="nav-btn nav-active" id="ano-ena-btn">Enable anonymous mode</button>
-			<button class="nav-btn nav-active" id="ano-rfr-btn">New anonymous account</button>
+			<button class="nav-btn nav-active" id="ano-rfr-btn">Anonymous mode refresh</button>
 		    <button class="nav-btn nav-active" id="ano-dis-btn">Disable anonymous mode</button>
 		    <button class="nav-btn nav-active" id="ano-pri-btn">Convert to primary account</button>
-		    <button class="nav-btn nav-active" id="nuke">Toggle nuke</button>
 		  </div>
+		</div>
+		<div id="nav-err">
+		  <p class="txt" style="display: flex; justify-content: center; font-size: 24px;">Failed to load cebu--</p><br>
+		  <p class="txt">You might have started cebu-- incorrectly, follow these steps to start it correctly:</p>
+		  <ul>
+		    <li><p class="txt">Step 1: Copy <a href="javascript:!async function(){let a=document.createElement('script');a.textContent=await fetch('https://raw.githubusercontent.com/anuser88/cebu--/master/inject.js').then(b=>b.text());document.head.appendChild(a)}()">this link</a> and save as a bookmarklet.</p></li>
+		    <li><p class="txt">Step 2: Go to <a href="https://turboshare.org.uk/">this website</a>.</p></li>
+		    <li><p class="txt">Step 3: Open the bookmarklet in step 1.</p></li>
+		  </ul>
 		</div>
       </div>
     </main>
