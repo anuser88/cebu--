@@ -4,10 +4,34 @@
     <title>
       Verification completed
     </title>
+    <style>
+      html, body {
+        font-family: Arial, Helvetica, sans-serif;
+        height: 100vh;
+        margin: 0px;
+      }
+      h4 {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap
+      }
+    </style>
+    <script>
+      !async function(){
+        await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
+        const html = document.documentElement;
+        const body = document.body;
+        const rect = html.getBoundingClientRect();
+        body.style.position = "fixed";
+        body.style.inset = `${rect.top}px ${innerWidth - rect.right}px ${innerHeight - rect.bottom}px ${rect.left}px`;
+      }();
+    </script>
   </head>
   <body>
-    <h2>
+    <h4>
       Verification completed! Go back to the cebu-- page and continue using.
-    </h2>
+    </h4>
   </body>
 </html>
