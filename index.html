@@ -40,15 +40,14 @@
 		let poolI = 0;
 		async function checkPool() {
 		  let x = [];
-		  async function checkPoolInner(sAcc){
+		  accPool.forEach(sAcc=>x.push((async()=>{
 		    const chunkForm = new FormData();
 		    chunkForm.append("username", sAcc.username);
 		    chunkForm.append("sessionToken", sAcc.sessionToken);
 		    const y = await fetch("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json()).then(x.error);
 			if (y === "Access Denied: Authentication error!") return null;
 			else return sAcc;
-		  }
-		  accPool.forEach(sAcc=>x.push(checkPoolInner(sAcc)));
+		  })()));
 		  x = await Promise.all(x);
 		  x = x.filter(e=>e!==null);
 		  localStorage.setItem("__pool", JSON.stringify(x));
@@ -850,7 +849,7 @@
 		  <p class="txt" style="display: flex; justify-content: center; font-size: 24px;">Failed to load cebu--</p><br>
 		  <p class="txt">You might have started cebu-- incorrectly, follow these steps to start it correctly:</p>
 		  <ul>
-		    <li><p class="txt">Step 1: Copy <a href="javascript:!async function(){let a=document.createElement('script');a.textContent=await fetch('https://raw.githubusercontent.com/anuser88/cebu--/master/inject.js').then(b=>b.text());document.head.appendChild(a)}()">this link</a> and save as a bookmarklet.</p></li>
+		    <li><p class="txt">Step 1: Copy <a href="javascript:(async()=>{let a=document.createElement('script');a.textContent=await fetch('https://raw.githubusercontent.com/anuser88/cebu--/master/inject.js').then(b=>b.text());document.head.appendChild(a)})()">this link</a> and save as a bookmarklet.</p></li>
 		    <li><p class="txt">Step 2: Go to <a href="https://turboshare.org.uk/">this website</a>.</p></li>
 		    <li><p class="txt">Step 3: Open the bookmarklet in step 1.</p></li>
 		  </ul>
