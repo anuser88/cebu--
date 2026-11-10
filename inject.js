@@ -2,7 +2,7 @@
   let inj;
   const simele = Date.now() + 0;
   try {
-    inj = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/lite.html").then(x=>x.text());
+    inj = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
   }
   catch (e) {
     alert(`Complete the Cloudflare's verification first: ${e}`);
