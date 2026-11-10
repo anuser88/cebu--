@@ -407,7 +407,6 @@
           });
 		  updFsMap = async()=>{
 			document.getElementById('upl-stat').textContent = `Updating FS...`;
-			const zip = new JSZip();
 			const thing = new Blob([JSON.stringify(fs)], {type: 'application/json'});
 			const ret = await uploadParts(thing, 'FS');
 			localStorage.setItem('fs_', ret.join(','));
