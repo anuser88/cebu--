@@ -146,13 +146,13 @@
                 localStorage.removeItem("danv_user");
                 location.reload();
               }
+			  document.getElementById('verify-shit').remove();
             })();
           } else {
 		    localStorage.removeItem("danv_user");
 			location.reload();
 		  }
 		}
-		document.getElementById('verify-shit').remove();
 		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
 		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
 		document.getElementById('chat-btn').addEventListener('click', ()=>navigate("nav-chat", "Chat"));
