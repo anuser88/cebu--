@@ -124,13 +124,17 @@
 			  let t;
 			  if (cecebi?.dailyLogin?.partner && cecebi?.dailyLogin?.coupleLastClaim !== today) t = 'couple';
 			  if (cecebi?.dailyLogin?.lastClaim !== today) t = 'single';
-			  if (!t) throw new Error('');
+			  if (!t) {
+			    document.getElementById('verify-shit').remove();
+				return;
+			  }
 			  for(;;) {
 			    if(document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value)break;
-				await sleep(75);
+				await sleep(100);
 			  }
 		      let hcaptchaToken = document.querySelector('#hcaptchaShit [name="h-captcha-response"]')?.value;
-              const res = await fetchRetry("https://turboshare.org.uk/api/store/daily", {
+			  document.getElementById('verify-shit').remove();
+              fetchRetry("https://turboshare.org.uk/api/store/daily", {
                 "headers": {
                   "x-client-type": "StudioDANV-Web"
                 },
@@ -144,11 +148,6 @@
                 "mode": "cors",
                 "credentials": "include"
               }).then(x=>x.json());
-              if (res?.error === "Unauthorized access detected") {
-                localStorage.removeItem("danv_user");
-                location.reload();
-              }
-			  document.getElementById('verify-shit').remove();
             })();
           } else {
 		    localStorage.removeItem("danv_user");
@@ -262,7 +261,7 @@
 				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
-				const referralCode = username;
+				const referralCode = 'studiodanv';
 				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
@@ -316,10 +315,10 @@
 			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
 			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
 				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
-				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
-				const referralCode = username;
+				const referralCode = 'studiodanv';
 				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
@@ -543,7 +542,7 @@
 		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');location.reload()}});
 		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);location.reload()}});
 		  appendd("export",()=>{navigator.clipboard.writeText(localStorage.getItem('fs_'));alert("Copied the code to your clipboard!")});
-		  if (ano) {
+		  if (accPool.length !== 0) {
 		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
 			if (dirStack.length) {
 		      appendd("rename folder",()=>{let y=dirStack.slice(-1)[0];chdir('..');renameEntry(y,prompt('New name:'));chf='';renderFileStuff(destDir())});

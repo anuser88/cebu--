@@ -41,7 +41,7 @@
       SiBu = document.createElement('iframe');
       document.body.prepend(SiBu);
 	  let rl = 0;
-  	  SiBu.src = "https://turboshare.org.uk";
+  	  SiBu.src = location.href;
   	  SiBu.contentWindow.document.open();
       SiBu.contentWindow.document.write(inj);
       SiBu.contentWindow.document.close();
