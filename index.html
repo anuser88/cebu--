@@ -47,6 +47,7 @@
 		    chunkForm.append("username", sAcc.username);
 		    chunkForm.append("sessionToken", sAcc.sessionToken);
 		    const y = await fetch("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json()).then(x.error);
+			sAcc.lastCheck = Date.now();
 			if (y === "Access Denied: Authentication error!") return null;
 			else return sAcc;
 		  })()));
