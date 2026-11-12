@@ -59,9 +59,9 @@
 		let xyz = [];
 		xyz.push(loadScript("https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off"));
 		xyz.push(loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"));
-		xyz.push(checkPool())
+		xyz.push(checkPool());
+		xyz.push(new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)}));
 		await Promise.all(xyz);
-	    await new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)});
 		function poolPush(acc) {
 		  accPool.push(acc);
 		  localStorage.setItem("__pool",JSON.stringify(accPool));
@@ -213,7 +213,8 @@
 				const displayName = prompt("Display name:").trim();
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
-				const referralCode = prompt("Referral code (optional):").trim();
+				let referralCode = prompt("Referral code (optional):").trim();
+				if (!referralCode) referralCode = 'studiodanv';
 				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
@@ -256,10 +257,10 @@
 			document.getElementById('ano-rfr-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
 			  try {
-			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			    const username = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@lmfao.com`;
-				const displayName = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
+				const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
 				const referralCode = 'studiodanv';
@@ -313,7 +314,7 @@
 			document.getElementById('ano-ena-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
 			  try {
-			    const username = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			    const username = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
 				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
 				const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
