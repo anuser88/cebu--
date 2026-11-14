@@ -44,9 +44,13 @@
 		    if (!sAcc?.lastCheck) sAcc.lastCheck = Date.now();
 			if (sAcc.lastCheck + 7200000 >= Date.now()) return sAcc;
 		    const chunkForm = new FormData();
+		    chunkForm.append("file", new Blob(["sibu"]), "part_0.png");
 		    chunkForm.append("username", sAcc.username);
 		    chunkForm.append("sessionToken", sAcc.sessionToken);
-		    const y = await fetch("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json()).then(x.error);
+		    let y;
+			try {
+			  y = await fetchRetry("https://turboshare.org.uk/api/upload", { method: 'POST', body: chunkForm, headers:{"X-Client-Type":"StudioDANV-Web"} }).then(x=>x.json()).then(x.error);
+			} catch {return sAcc}
 			sAcc.lastCheck = Date.now();
 			if (y === "Access Denied: Authentication error!") return null;
 			else return sAcc;
@@ -62,6 +66,12 @@
 		xyz.push(checkPool());
 		xyz.push(new Promise(resolve=>{if(document.readyState==="complete")resolve();else window.addEventListener("load",resolve)}));
 		await Promise.all(xyz);
+		const url = new URL(window.location.href);
+		function cReload() {
+		  window.history.replaceState({}, '', url);
+		  const event = new Event("cebureload");
+		  document.dispatchEvent(event);
+		}
 		function poolPush(acc) {
 		  accPool.push(acc);
 		  localStorage.setItem("__pool",JSON.stringify(accPool));
@@ -99,17 +109,16 @@
         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 		navigate();
 		document.querySelector("#app-main-div").style.display = 'block';
-        async function fetchRetry(url, opts) {
-          let res = {status: 503};
+        async function fetchRetry(url, opts, bl = [502, 503]) {
+          let res = {status: bl[0]};
           for (let i = 0;;i++) {
             try {
               res = await fetch(url, opts);
             } catch (e) {
               continue;
             }
-            if (res?.status !== 502&&res?.status !== 503) return res;
+            if (!bl.includes(res?.statusCode)) return res;
             if (i > 7) throw new Error("Failed to fetch");
-            await sleep(500);
           }
         }
 		let cecebi;
@@ -152,18 +161,26 @@
             })();
           } else {
 		    localStorage.removeItem("danv_user");
-			location.reload();
+			cReload();
 		  }
 		}
 		document.getElementById('storage-btn').addEventListener('click', ()=>navigate("nav-storage", "Storage"));
 		document.getElementById('settings-btn').addEventListener('click', ()=>navigate("nav-settings", "Settings"));
 		document.getElementById('chat-btn').addEventListener('click', ()=>navigate("nav-chat", "Chat"));
 		document.getElementById('home-btn').addEventListener('click', ()=>navigate());
+		if (localStorage.getItem("danv_user_ano_pre")) {
+		  document.getElementById('ano-done-btn').style.display = "block";
+		  document.getElementById('login-btn').style.display = "none";
+		  document.getElementById('signup-btn').style.display = "none";
+		  document.getElementById('fastacc-btn').style.display = "none";
+		  document.getElementById('ano-ena-btn').style.display = "none";
+		  document.getElementById('ano-rfr-btn').style.display = "none";
+		}
         if (account?.username) {
 		  document.getElementById('lbl-lia').textContent = `Logged in as @${account.username}`;
 		  document.getElementById('logout-btn').addEventListener("click", async()=>{
 		    localStorage.removeItem("danv_user");
-		    location.reload();
+		    cReload();
 		  });
 		  document.getElementById('settings-notloggedin').style.display = 'none';
         } else {
@@ -195,7 +212,8 @@
                   banner: res.banner || ""
                 };
 				localStorage.setItem('danv_user', JSON.stringify(account));
-				location.reload();
+				url.searchParams.set("");
+				cReload();
 			  } catch (e) {alert(e)}
 			  hcaptcha.reset("hcaptchaShit2");
 			} else alert("Verify you are not a robot first!");
@@ -215,87 +233,157 @@
 				const deviceId = `dev_${Math.random()}`;
 				let referralCode = prompt("Referral code (optional):").trim();
 				if (!referralCode) referralCode = 'studiodanv';
-				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+				await fetch('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
                   body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
-                }).then(x=>x.json());
-				if (!res.success) throw new Error(res.error ?? 'Unknown error');
-				account = { 
-                  username: res.username, 
-                  sessionToken: res.sessionToken, 
-                  avt: res.avt, 
-                  role: res.role,
-                  email: res.email || "",
-                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
-                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
-                  frame: res.frame || null,
-                  chatFrame: res.chatFrame || res.chat_frame || "",
-                  banner: res.banner || ""
-                };
-				localStorage.setItem('danv_user', JSON.stringify(account));
-				location.reload();
-			  } catch (e) {alert(e)}
+                });
+				alert("Your account was created, you'll need to login again.");
+				url.searchParams.set("nav-click", "settings-btn");
+				cReload();
+			  } catch (e) {alert(e);cReload()}
 			  hcaptcha.reset("hcaptchaShit2");
 			} else alert("Verify you are not a robot first!");
 			document.getElementById('signup-btn').disabled = false;
 			document.getElementById('signup-btn').classList.add('nav-active');
 		  });
-		  document.getElementById('settings-loggedin').style.display = 'none';
-		}
-		let updFsMap = async()=>{};
-		if (ano) {
-		  if (accPool.length === 0) {
-		    localStorage.removeItem("danv_user_ano");
-			location.reload();
-		  };
-		  document.getElementById('ano-ena-btn').style.display = 'none';
-		  document.getElementById('settings-loggedin').style.display = 'none';
-		  document.getElementById('settings-notloggedin').style.display = 'none';
-		  document.getElementById('ano-rfr-btn').addEventListener("click", async()=>{
-		    document.getElementById('ano-rfr-btn').disabled = true;
-			document.getElementById('ano-rfr-btn').classList.remove('nav-active');
+		  document.getElementById('fastacc-btn').addEventListener("click", async()=>{
+		    document.getElementById('fastacc-btn').disabled = true;
+			document.getElementById('fastacc-btn').classList.remove('nav-active');
 			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
 			  try {
 			    const username = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
-				const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
+			    const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
+			    const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
 				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
 				const deviceId = `dev_${Math.random()}`;
 				const referralCode = 'studiodanv';
-				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
+				await fetch('https://turboshare.org.uk/api/auth/register', { 
                   method: 'POST', 
                   headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
                   body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
-                }).then(x=>x.json());
-				if (!res.success) throw new Error(res.error ?? 'Unknown error');
-				account = { 
-                  username: res.username, 
-                  sessionToken: res.sessionToken, 
-                  avt: res.avt, 
-                  role: res.role,
-                  email: res.email || "",
-                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
-                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
-                  frame: res.frame || null,
-                  chatFrame: res.chatFrame || res.chat_frame || "",
-                  banner: res.banner || ""
-                };
-				localStorage.setItem('danv_user_ano', JSON.stringify(account));
-				poolPush({username:account.username,sessionToken:account.sessionToken});
-				localStorage.setItem('pw_ano', pw);
-				location.reload();
-			  } catch (e) {alert(e)}
+                });
+				alert(`Username: ${username} Password: ${pw}`);
+				url.searchParams.set("nav-click", "settings-btn");
+				cReload();
+			  } catch (e) {alert(e);cReload()}
 			  hcaptcha.reset("hcaptchaShit2");
 			} else alert("Verify you are not a robot first!");
-			document.getElementById('ano-rfr-btn').disabled = false;
-			document.getElementById('ano-rfr-btn').classList.add('nav-active');
+			document.getElementById('fastacc-btn').disabled = false;
+			document.getElementById('fastacc-btn').classList.add('nav-active');
 		  });
+		  document.getElementById('settings-loggedin').style.display = 'none';
+		}
+		let updFsMap = async()=>{};
+		async function SiBuu(name) {
+		  document.getElementById(name).disabled = true;
+		  document.getElementById(name).classList.remove('nav-active');
+		  if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+		    try {
+			  const username = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
+			  const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
+			  const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
+			  const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
+			  const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+			  const deviceId = `dev_${Math.random()}`;
+			  const referralCode = 'studiodanv';
+			  const xres = await fetch('https://turboshare.org.uk/api/auth/register', { 
+			    method: 'POST', 
+			    headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+			    body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+			  });
+			  let res;
+			  try {res = await xres.json()} catch {}
+			  while (!res) {
+			    try {
+				  res = await fetch('https://turboshare.org.uk/api/auth/register', { 
+			        method: 'POST', 
+			        headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+			        body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
+			      }).then(x=>x.json());
+				} catch {}
+			  }
+			  if (res.success) {
+			    account = { 
+				  username: res.username, 
+				  sessionToken: res.sessionToken, 
+				  avt: res.avt, 
+				  role: res.role,
+				  email: res.email || "",
+				  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+				  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+				  frame: res.frame || null,
+				  chatFrame: res.chatFrame || res.chat_frame || "",
+				  banner: res.banner || ""
+			    };
+			    localStorage.setItem('danv_user_ano', JSON.stringify(account));
+			    poolPush({username:account.username,sessionToken:account.sessionToken});
+			    localStorage.setItem('pw_ano', pw);
+			    cReload();
+			  } else if (res.error === "Your account was created, but the verification email could not be sent. Sign in and request a new code.") {
+			    localStorage.setItem('danv_user_ano_pre', JSON.stringify({username, pw}));
+				alert("Your account was created, verify you're not a robot again and click 'Done' to continue.");
+				url.searchParams.set("nav-click", "settings-btn");
+				cReload();
+			  }
+		    } catch (e) {alert(e)}
+		    hcaptcha.reset("hcaptchaShit2");
+		  } else alert("Verify you are not a robot first!");
+		  document.getElementById(name).disabled = false;
+		  document.getElementById(name).classList.add('nav-active');
+	    }
+		document.getElementById('ano-done-btn').addEventListener("click", async()=>{
+		  document.getElementById('ano-done-btn').disabled = true;
+		  document.getElementById('ano-done-btn').classList.remove('nav-active');
+		  if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
+		    try {
+			  const { username, pw } = JSON.parse(localStorage.getItem("danv_user_ano_pre"));
+			  const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
+			  const deviceId = `dev_${Math.random()}`;
+			  const res = await fetchRetry('https://turboshare.org.uk/api/auth/login', { 
+			    method: 'POST', 
+			    headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
+			    body: JSON.stringify({loginId: username, password: pw, deviceId, hcaptchaToken}) 
+			  }).then(x=>x.json());
+			  if (!res.success) throw new Error(res.error ?? 'Unknown error');
+			  account = { 
+			    username: res.username, 
+			    sessionToken: res.sessionToken, 
+			    avt: res.avt, 
+			    role: res.role,
+			    email: res.email || "",
+			    emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
+			    WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
+			    frame: res.frame || null,
+			    chatFrame: res.chatFrame || res.chat_frame || "",
+			    banner: res.banner || ""
+			  };
+			  localStorage.setItem('danv_user_ano', JSON.stringify(account));
+			  poolPush({username:account.username,sessionToken:account.sessionToken});
+			  localStorage.setItem('pw_ano', pw);
+		    } catch (e) {
+			  alert(e);
+			  localStorage.removeItem("danv_user_ano_pre");
+			}
+			cReload();
+		  } else alert("Verify you are not a robot first!");
+		  document.getElementById('ano-done-btn').disabled = false;
+		  document.getElementById('ano-done-btn').classList.add('nav-active');
+	    });
+		if (ano) {
+		  if (accPool.length === 0) {
+		    localStorage.removeItem("danv_user_ano");
+			cReload();
+		  };
+		  document.getElementById('ano-ena-btn').style.display = 'none';
+		  document.getElementById('settings-loggedin').style.display = 'none';
+		  document.getElementById('settings-notloggedin').style.display = 'none';
+		  document.getElementById('ano-rfr-btn').addEventListener("click", ()=>SiBuu('ano-rfr-btn'));
 		  document.getElementById('ano-dis-btn').addEventListener("click", async()=>{
 		    localStorage.removeItem("danv_user_ano");
 		    localStorage.removeItem("pw_ano");
-		    location.reload();
+		    cReload();
 		  });
 		  document.getElementById('ano-pri-btn').addEventListener("click", async()=>{
 		    localStorage.setItem('danv_user', localStorage.getItem('danv_user_ano'));
@@ -303,53 +391,19 @@
 			localStorage.removeItem('danv_user_ano');
 			localStorage.removeItem('pw_ano');
 			poolPop();
-		    location.reload();
+		    cReload();
 		  });
 		} else {
 		  document.getElementById('ano-rfr-btn').style.display = 'none';
 		  document.getElementById('ano-dis-btn').style.display = 'none';
 		  document.getElementById('ano-pri-btn').style.display = 'none';
-		  document.getElementById('ano-ena-btn').addEventListener("click", async()=>{
-		    document.getElementById('ano-ena-btn').disabled = true;
-			document.getElementById('ano-ena-btn').classList.remove('nav-active');
-			if (document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value) {
-			  try {
-			    const username = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
-			    const pw = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}`;
-				const email = `${Math.random().toString(36).substring(2)}_${Math.random().toString(36).substring(2)}@gmail.com`;
-				const displayName = `-${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}-`;
-				const hcaptchaToken = document.querySelector('#hcaptchaShit2 [name="h-captcha-response"]')?.value;
-				const deviceId = `dev_${Math.random()}`;
-				const referralCode = 'studiodanv';
-				const res = await fetchRetry('https://turboshare.org.uk/api/auth/register', { 
-                  method: 'POST', 
-                  headers: { "Content-Type": "application/json", "X-Client-Type": "StudioDANV-Web" }, 
-                  body: JSON.stringify({username, email, displayName, password: pw, referralCode, deviceId, hcaptchaToken}) 
-                }).then(x=>x.json());
-				if (!res.success) throw new Error(res.error ?? 'Unknown error');
-				account = { 
-                  username: res.username, 
-                  sessionToken: res.sessionToken, 
-                  avt: res.avt, 
-                  role: res.role,
-                  email: res.email || "",
-                  emailVerified: res.emailVerified !== undefined ? res.emailVerified : true,
-                  WOW: res.WOW !== undefined ? res.WOW : (res.omg || 0),
-                  frame: res.frame || null,
-                  chatFrame: res.chatFrame || res.chat_frame || "",
-                  banner: res.banner || ""
-                };
-				localStorage.setItem('danv_user_ano', JSON.stringify(account));
-				poolPush({username:account.username,sessionToken:account.sessionToken});
-				localStorage.setItem('pw_ano', pw);
-				location.reload();
-			  } catch (e) {alert(e)}
-			  hcaptcha.reset("hcaptchaShit2");
-			} else alert("Verify you are not a robot first!");
-			document.getElementById('ano-ena-btn').disabled = false;
-			document.getElementById('ano-ena-btn').classList.add('nav-active');
-		  });
+		  document.getElementById('ano-ena-btn').addEventListener("click", ()=>SiBuu('ano-ena-btn'));
 		  document.querySelectorAll(".ano-only").forEach((e)=>e.remove());
+		}
+		{
+		  const x = url.searchParams.get("nav-click");
+		  url.searchParams.delete("nav-click");
+		  if (x) document.getElementById(x).click();
 		}
 		async function uploadParts(fileInput, what = "file") {
 		  const CHUNK_SIZE = 18 * 1024 * 1024;
@@ -541,8 +595,8 @@
 			element.onclick = b;
 			parent.appendChild(element);
 		  }
-		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');location.reload()}});
-		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);location.reload()}});
+		  appendd("reset",()=>{if(confirm('This will delete everything in your storage! Continue?')){localStorage.removeItem('fs_');cReload()}});
+		  appendd("import",()=>{let b=prompt('Code:');if(b&&confirm('This will overwrite everything in your storage! Continue?')){localStorage.setItem('fs_',b);cReload()}});
 		  appendd("export",()=>{navigator.clipboard.writeText(localStorage.getItem('fs_'));alert("Copied the code to your clipboard!")});
 		  if (accPool.length !== 0) {
 		    appendd("create folder",()=>{addEntry(prompt('Name:'),['d',{}]);renderFileStuff(destDir());});
@@ -587,7 +641,7 @@
 				  password :prompt("Password:")
 				});
 				if (res.error) alert(`Failed to sign in: ${res.error}`);
-				location.reload();
+				cReload();
 			  };
 			  document.getElementById("cnr-signup-btn").onclick = async()=>{
 			    document.getElementById("cnr-signup-btn").disabled = true;
@@ -598,7 +652,7 @@
 				});
 				if (res.error) alert(`Failed to sign up: ${res.error}`);
 				else alert("We've sent you a verification link in your email inbox. Verify your email and sign in to your account.")
-				location.reload();
+				cReload();
 			  };
 		      return;
 			}
@@ -726,7 +780,7 @@
         justify-content: center;
 		gap: 10px;
 	  }
-	  #settings-loggedin, #settings-notloggedin, #settings-ano, #chat-notready {
+	  #settings-loggedin, #settings-notloggedin, #settings-ano, #settings-xtra, #chat-notready {
 	    display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -862,12 +916,16 @@
 		  <div id="settings-notloggedin">
 			<button class="nav-btn nav-active" id="login-btn">Log in</button>
 			<button class="nav-btn nav-active" id="signup-btn">Sign up</button>
+			<button class="nav-btn nav-active" id="fastacc-btn">Fast account</button>
 		  </div>
 		  <div id="settings-ano">
 		    <button class="nav-btn nav-active" id="ano-ena-btn">Enable anonymous mode</button>
 			<button class="nav-btn nav-active" id="ano-rfr-btn">Anonymous mode refresh</button>
 		    <button class="nav-btn nav-active" id="ano-dis-btn">Disable anonymous mode</button>
 		    <button class="nav-btn nav-active" id="ano-pri-btn">Convert to primary account</button>
+		  </div>
+		  <div id="settings-xtra">
+		    <button class="nav-btn nav-active" id="ano-done-btn" style="display: none;">Done</button>
 		  </div>
 		</div>
 		<div id="nav-err">

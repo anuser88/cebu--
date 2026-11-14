@@ -37,21 +37,20 @@
 	!async function(){for(;;){
 	  document.title=SiBu?.contentWindow?.document?.title??"cebu--";if(cceebbuu)break;await sleep(200);
 	}}();
-	function bubu() {
+	function bubu(cus) {
       SiBu = document.createElement('iframe');
       document.body.prepend(SiBu);
 	  let rl = 0;
-  	  SiBu.src = location.href;
+  	  SiBu.src = cus ? cus : location.href;
   	  SiBu.contentWindow.document.open();
       SiBu.contentWindow.document.write(inj);
       SiBu.contentWindow.document.close();
+      SiBu.contentWindow.document.addEventListener('cebureload', function() {
+		SiBu.remove();
+		new Promise(()=>bubu(SiBu.contentWindow?.location?.href));
+		return;
+	  });
       SiBu.addEventListener('load', function() {
-	    if (rl) {
-		  SiBu.remove();
-		  new Promise(bubu);
-		  return;
-	    }
-	    rl=1;
         const proScript = SiBu.contentWindow.document.createElement('script');
         proScript.textContent = `
           !async function() {
