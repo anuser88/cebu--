@@ -364,8 +364,8 @@
 			  localStorage.setItem('pw_ano', pw);
 		    } catch (e) {
 			  alert(e);
-			  localStorage.removeItem("danv_user_ano_pre");
 			}
+			localStorage.removeItem("danv_user_ano_pre");
 			cReload();
 		  } else alert("Verify you are not a robot first!");
 		  document.getElementById('ano-done-btn').disabled = false;
